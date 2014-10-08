@@ -12,7 +12,7 @@ using Microsoft.AspNet.Identity;
 namespace HyperSlackers.MultiHost
 {
     public class UserStoreMultiHost<TUser, TRole, TKey, THostKey, TUserLogin, TUserRole, TUserClaim> : UserStore<TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim>
-        where TUser : IdentityUserMultiHost<TKey, THostKey, TUserLogin, TUserRole, TUserClaim>
+        where TUser : IdentityUserMultiHost<TKey, THostKey, TUserLogin, TUserRole, TUserClaim>, new()
         where TRole : IdentityRoleMultiHost<TKey, THostKey, TUserRole>
         where TKey : IEquatable<TKey>
         where THostKey : IEquatable<THostKey>

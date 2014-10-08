@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace HyperSlackers.MultiHost
 {
     public class UserManagerMultiHost<TUser, TKey, THostKey> : UserManager<TUser, TKey>
-        where TUser : IdentityUserMultiHost<TKey, THostKey, IdentityUserLoginMultiHost<TKey, THostKey>, IdentityUserRoleMultiHost<TKey>, IdentityUserClaimMultiHost<TKey>>
+        where TUser : IdentityUserMultiHost<TKey, THostKey, IdentityUserLoginMultiHost<TKey, THostKey>, IdentityUserRoleMultiHost<TKey>, IdentityUserClaimMultiHost<TKey>>, new()
         where TKey : IEquatable<TKey>
         where THostKey : IEquatable<THostKey>
     {
@@ -44,6 +44,11 @@ namespace HyperSlackers.MultiHost
             {
                 user.Roles.Remove(user.Roles.Where(r => r.RoleId.Equals(roleId)).Single());
             }
+        }
+
+        public TUser New()
+        {
+            return new TUser();
         }
     }
 

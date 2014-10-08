@@ -15,7 +15,7 @@ using HyperSlackers.MultiHost.Extensions;
 namespace HyperSlackers.MultiHost
 {
     public class IdentityDbContextMultiHost<TUser, TRole, TKey, THostKey, TUserLogin, TUserRole, TUserClaim> : IdentityDbContext<TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim>
-        where TUser : IdentityUserMultiHost<TKey, THostKey, TUserLogin, TUserRole, TUserClaim>
+        where TUser : IdentityUserMultiHost<TKey, THostKey, TUserLogin, TUserRole, TUserClaim>, new()
         where TRole : IdentityRoleMultiHost<TKey, THostKey, TUserRole>
         where TUserLogin : IdentityUserLoginMultiHost<TKey, THostKey>, new()
         where TUserRole : IdentityUserRoleMultiHost<TKey>, new()
@@ -68,7 +68,7 @@ namespace HyperSlackers.MultiHost
     }
 
     public class IdentityDbContextMultiHostString<TUser> : IdentityDbContextMultiHost<TUser, IdentityRoleMultiHostString, string, string, IdentityUserLoginMultiHostString, IdentityUserRoleMultiHostString, IdentityUserClaimMultiHostString>
-        where TUser : IdentityUserMultiHostString
+        where TUser : IdentityUserMultiHostString, new()
     {
         public IdentityDbContextMultiHostString()
             : this("DefaultConnection")
@@ -90,7 +90,7 @@ namespace HyperSlackers.MultiHost
     }
 
     public class IdentityDbContextMultiHostGuid<TUser> : IdentityDbContextMultiHost<TUser, IdentityRoleMultiHostGuid, Guid, Guid, IdentityUserLoginMultiHostGuid, IdentityUserRoleMultiHostGuid, IdentityUserClaimMultiHostGuid>
-        where TUser : IdentityUserMultiHostGuid
+        where TUser : IdentityUserMultiHostGuid, new()
     {
         public IdentityDbContextMultiHostGuid()
             : this("DefaultConnection")
@@ -112,7 +112,7 @@ namespace HyperSlackers.MultiHost
     }
 
     public class IdentityDbContextMultiHostInt<TUser> : IdentityDbContextMultiHost<TUser, IdentityRoleMultiHostInt, int, int, IdentityUserLoginMultiHostInt, IdentityUserRoleMultiHostInt, IdentityUserClaimMultiHostInt>
-        where TUser : IdentityUserMultiHostInt
+        where TUser : IdentityUserMultiHostInt, new()
     {
         public IdentityDbContextMultiHostInt()
             : this("DefaultConnection")
@@ -134,7 +134,7 @@ namespace HyperSlackers.MultiHost
     }
 
     public class IdentityDbContexMultiHosttLong<TUser> : IdentityDbContextMultiHost<TUser, IdentityRoleMultiHostLong, long, long, IdentityUserLoginMultiHostLong, IdentityUserRoleMultiHostLong, IdentityUserClaimMultiHostLong>
-        where TUser : IdentityUserMultiHostLong
+        where TUser : IdentityUserMultiHostLong, new()
     {
         public IdentityDbContexMultiHosttLong()
             : this("DefaultConnection")
