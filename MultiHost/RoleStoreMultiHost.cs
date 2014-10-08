@@ -53,6 +53,13 @@ namespace HyperSlackers.MultiHost
             await base.CreateAsync(role);
         }
 
+        public async Task CreateAsync(TKey id, THostKey hostId, string roleName)
+        {
+            TRole role = new TRole() { Id = id, HostId = hostId, Name = roleName };
+
+            await CreateAsync(role);
+        }
+
         public new async Task<TRole> FindByNameAsync(string name)
         {
             //Contract.Requires<ArgumentException>(!name.IsNullOrWhiteSpace());
