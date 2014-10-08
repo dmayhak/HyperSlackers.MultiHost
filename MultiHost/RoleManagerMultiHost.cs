@@ -35,10 +35,10 @@ namespace HyperSlackers.MultiHost
         {
             //Contract.Requires<ArgumentException>(!roleName.IsNullOrWhiteSpace());
 
-            return await RoleExistsAsync(roleName, this.HostId);
+            return await Task.FromResult(RoleExists(roleName, this.HostId));
         }
 
-        public async Task<bool> RoleExistsAsync(string roleName, THostKey hostId) // not really async...
+        public bool RoleExists(string roleName, THostKey hostId)
         {
             Contract.Requires<ArgumentException>(!roleName.IsNullOrWhiteSpace());
             Contract.Requires<ArgumentNullException>(!EqualityComparer<THostKey>.Default.Equals(hostId, default(THostKey)), "hostId");
