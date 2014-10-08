@@ -25,6 +25,17 @@ namespace HyperSlackers.MultiHost
         {
             this.HostId = hostId;
         }
+
+        public bool IsInRole(TKey userId, TKey roleId)
+        {
+            var user = Store.FindByIdAsync(userId).Result;
+            if (user != null)
+            {
+                return user.Roles.Any(r => r.RoleId.Equals(roleId));
+            }
+
+            return false;
+        }
     }
 
     public class UserManagerMultiHostString : UserManagerMultiHost<IdentityUserMultiHost<string, string, IdentityUserLoginMultiHost<string, string>, IdentityUserRoleMultiHost<string>, IdentityUserClaimMultiHost<string>>, string, string>
@@ -53,7 +64,6 @@ namespace HyperSlackers.MultiHost
         public UserManagerMultiHostGuid(UserStoreMultiHostGuid store, Guid hostId)
             : base(store, hostId)
         {
-            // allow duplicate emails and funky chars
             this.UserValidator = new UserValidator<IdentityUserMultiHost<Guid, Guid, IdentityUserLoginMultiHost<Guid, Guid>, IdentityUserRoleMultiHost<Guid>, IdentityUserClaimMultiHost<Guid>>, Guid>(this) { AllowOnlyAlphanumericUserNames = false, RequireUniqueEmail = false };
         }
     }
