@@ -36,6 +36,15 @@ namespace HyperSlackers.MultiHost
 
             return false;
         }
+
+        public void RemoveFromRole(TKey userId, TKey roleId)
+        {
+            var user = Store.FindByIdAsync(userId).Result;
+            if (user != null)
+            {
+                user.Roles.Remove(user.Roles.Where(r => r.RoleId.Equals(roleId)).Single());
+            }
+        }
     }
 
     public class UserManagerMultiHostString : UserManagerMultiHost<IdentityUserMultiHost<string, string, IdentityUserLoginMultiHost<string, string>, IdentityUserRoleMultiHost<string>, IdentityUserClaimMultiHost<string>>, string, string>
