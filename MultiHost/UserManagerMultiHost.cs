@@ -8,19 +8,21 @@ using System.Threading.Tasks;
 namespace HyperSlackers.MultiHost
 {
     public class UserManagerMultiHost<TUser, TKey, THostKey> : UserManager<TUser, TKey>
-        where TUser : IdentityUserMultiHost<TKey, THostKey, IdentityUserLoginMultiHost<TKey, THostKey>, IdentityUserRoleMultiHost<TKey>, IdentityUserClaimMultiHost<TKey>>, new()
+        where TUser : IdentityUserMultiHost<TKey, THostKey>, new()
         where TKey : IEquatable<TKey>
         where THostKey : IEquatable<THostKey>
     {
         public virtual THostKey HostId { get; set; }
+        private bool disposed = false;
 
-        public UserManagerMultiHost(UserStoreMultiHost<TUser, IdentityRoleMultiHost<TKey, THostKey, IdentityUserRoleMultiHost<TKey>>, TKey, THostKey, IdentityUserLoginMultiHost<TKey, THostKey>, IdentityUserRoleMultiHost<TKey>, IdentityUserClaimMultiHost<TKey>> store)
+        public UserManagerMultiHost(UserStoreMultiHost<TUser, TKey, THostKey> store)
             : base(store)
         {
-
+            // allow duplicate emails and funky chars
+            this.UserValidator = new UserValidator<TUser, TKey>(this) { AllowOnlyAlphanumericUserNames = false, RequireUniqueEmail = false };
         }
 
-        public UserManagerMultiHost(UserStoreMultiHost<TUser, IdentityRoleMultiHost<TKey, THostKey, IdentityUserRoleMultiHost<TKey>>, TKey, THostKey, IdentityUserLoginMultiHost<TKey, THostKey>, IdentityUserRoleMultiHost<TKey>, IdentityUserClaimMultiHost<TKey>> store, THostKey hostId)
+        public UserManagerMultiHost(UserStoreMultiHost<TUser, TKey, THostKey> store, THostKey hostId)
             : this(store)
         {
             this.HostId = hostId;
@@ -46,70 +48,78 @@ namespace HyperSlackers.MultiHost
             }
         }
 
-        public TUser New()
+        public void CreateUser(TUser user, string password)
         {
-            return new TUser();
+            base.CreateAsync(user);
+
+            base.AddPasswordAsync(user.Id, password);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (!this.disposed)
+            {
+                if (disposing)
+                {
+                    // TODO: cache references? if so, release them here
+
+                    this.disposed = true;
+                }
+            }
+
+            base.Dispose(disposing);
         }
     }
 
-    public class UserManagerMultiHostString : UserManagerMultiHost<IdentityUserMultiHost<string, string, IdentityUserLoginMultiHost<string, string>, IdentityUserRoleMultiHost<string>, IdentityUserClaimMultiHost<string>>, string, string>
+    public class UserManagerMultiHostString : UserManagerMultiHost<IdentityUserMultiHost<string, string>, string, string>
     {
-        public UserManagerMultiHostString(UserStoreMultiHostString store)
+        public UserManagerMultiHostString(UserStoreMultiHost<IdentityUserMultiHost<string, string>, string, string> store)
             : this(store, null)
         {
-
         }
 
-        public UserManagerMultiHostString(UserStoreMultiHostString store, string hostId)
+        public UserManagerMultiHostString(UserStoreMultiHost<IdentityUserMultiHost<string, string>, string, string> store, string hostId)
             : base(store, hostId)
         {
-
         }
     }
 
-    public class UserManagerMultiHostGuid : UserManagerMultiHost<IdentityUserMultiHost<Guid, Guid, IdentityUserLoginMultiHost<Guid, Guid>, IdentityUserRoleMultiHost<Guid>, IdentityUserClaimMultiHost<Guid>>, Guid, Guid>
+    public class UserManagerMultiHostGuid : UserManagerMultiHost<IdentityUserMultiHost<Guid, Guid>, Guid, Guid>
     {
-        public UserManagerMultiHostGuid(UserStoreMultiHostGuid store)
+        public UserManagerMultiHostGuid(UserStoreMultiHost<IdentityUserMultiHost<Guid, Guid>, Guid, Guid> store)
             : this(store, Guid.Empty)
         {
-
         }
 
-        public UserManagerMultiHostGuid(UserStoreMultiHostGuid store, Guid hostId)
+        public UserManagerMultiHostGuid(UserStoreMultiHost<IdentityUserMultiHost<Guid, Guid>, Guid, Guid> store, Guid hostId)
             : base(store, hostId)
         {
-            this.UserValidator = new UserValidator<IdentityUserMultiHost<Guid, Guid, IdentityUserLoginMultiHost<Guid, Guid>, IdentityUserRoleMultiHost<Guid>, IdentityUserClaimMultiHost<Guid>>, Guid>(this) { AllowOnlyAlphanumericUserNames = false, RequireUniqueEmail = false };
         }
     }
 
-    public class UserManagerMultiHostInt : UserManagerMultiHost<IdentityUserMultiHost<int, int, IdentityUserLoginMultiHost<int, int>, IdentityUserRoleMultiHost<int>, IdentityUserClaimMultiHost<int>>, int, int>
+    public class UserManagerMultiHostInt : UserManagerMultiHost<IdentityUserMultiHost<int, int>, int, int>
     {
-        public UserManagerMultiHostInt(UserStoreMultiHostInt store)
+        public UserManagerMultiHostInt(UserStoreMultiHost<IdentityUserMultiHost<int, int>, int, int> store)
             : this(store, 0)
         {
-
         }
 
-        public UserManagerMultiHostInt(UserStoreMultiHostInt store, int hostId)
+        public UserManagerMultiHostInt(UserStoreMultiHost<IdentityUserMultiHost<int, int>, int, int> store, int hostId)
             : base(store, hostId)
         {
-            // allow duplicate emails and funky chars
-            this.UserValidator = new UserValidator<IdentityUserMultiHost<int, int, IdentityUserLoginMultiHost<int, int>, IdentityUserRoleMultiHost<int>, IdentityUserClaimMultiHost<int>>, int>(this) { AllowOnlyAlphanumericUserNames = false, RequireUniqueEmail = false };
         }
     }
 
-    public class UserManagerMultiHostLong : UserManagerMultiHost<IdentityUserMultiHost<long, long, IdentityUserLoginMultiHost<long, long>, IdentityUserRoleMultiHost<long>, IdentityUserClaimMultiHost<long>>, long, long>
+    public class UserManagerMultiHostLong : UserManagerMultiHost<IdentityUserMultiHost<long, long>, long, long>
     {
-        public UserManagerMultiHostLong(UserStoreMultiHostLong store)
-            : this(store, 0)
+        public UserManagerMultiHostLong(UserStoreMultiHost<IdentityUserMultiHost<long, long>, long, long> store)
+            : base(store)
         {
-
         }
 
-        public UserManagerMultiHostLong(UserStoreMultiHostLong store, long hostId)
+        public UserManagerMultiHostLong(UserStoreMultiHost<IdentityUserMultiHost<long, long>, long, long> store, long hostId)
             : base(store, hostId)
         {
-
         }
     }
 }

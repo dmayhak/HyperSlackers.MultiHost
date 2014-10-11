@@ -9,77 +9,73 @@ using HyperSlackers.MultiHost.Extensions;
 
 namespace HyperSlackers.MultiHost
 {
-    public class IdentityUserMultiHost<TKey, THostKey, TLogin, TRole, TClaim> : IdentityUser<TKey, TLogin, TRole, TClaim>, IUserMultiHost<TKey, THostKey>
+    public class IdentityUserMultiHost<TKey, THostKey> : IdentityUser<TKey, IdentityUserLoginMultiHost<TKey, THostKey>, IdentityUserRoleMultiHost<TKey>, IdentityUserClaimMultiHost<TKey>>, IUserMultiHost<TKey, THostKey>
         where TKey : IEquatable<TKey>
         where THostKey : IEquatable<THostKey>
-        where TLogin : IdentityUserLoginMultiHost<TKey, THostKey>
-        where TRole : IdentityUserRoleMultiHost<TKey>
-        where TClaim : IdentityUserClaimMultiHost<TKey>
     {
         public THostKey HostId { get; set; }
+
+        public IdentityUserMultiHost()
+        {
+        }
+
+        public IdentityUserMultiHost(string userName)
+        {
+            Contract.Requires<ArgumentException>(!userName.IsNullOrWhiteSpace());
+
+            UserName = userName;
+        }
     }
 
-    public class IdentityUserMultiHostString :  IdentityUserMultiHost<string, string, IdentityUserLoginMultiHostString, IdentityUserRoleMultiHostString, IdentityUserClaimMultiHostString>
+    public class IdentityUserMultiHostString : IdentityUserMultiHost<string, string>
     {
         public IdentityUserMultiHostString()
         {
-            Id = Guid.NewGuid().ToString();
         }
 
         public IdentityUserMultiHostString(string userName) 
-            : this()
+            : base(userName)
         {
             Contract.Requires<ArgumentException>(!userName.IsNullOrWhiteSpace());
-
-            UserName = userName;
         }
     }
 
-    public class IdentityUserMultiHostGuid : IdentityUserMultiHost<Guid, Guid, IdentityUserLoginMultiHostGuid, IdentityUserRoleMultiHostGuid, IdentityUserClaimMultiHostGuid>
+    public class IdentityUserMultiHostGuid : IdentityUserMultiHost<Guid, Guid>
     {
         public IdentityUserMultiHostGuid()
         {
-            Id = Guid.NewGuid();
         }
 
-        public IdentityUserMultiHostGuid(string userName) 
-            : this()
+        public IdentityUserMultiHostGuid(string userName)
+            : base(userName)
         {
             Contract.Requires<ArgumentException>(!userName.IsNullOrWhiteSpace());
-
-            UserName = userName;
         }
     }
 
-    public class IdentityUserMultiHostInt : IdentityUserMultiHost<int, int, IdentityUserLoginMultiHostInt, IdentityUserRoleMultiHostInt, IdentityUserClaimMultiHostInt>
+    public class IdentityUserMultiHostInt : IdentityUserMultiHost<int, int>
     {
         public IdentityUserMultiHostInt()
         {
-            Id = 0; // TODO: how to assign this?
         }
 
-        public IdentityUserMultiHostInt(string userName) 
-            : this()
+        public IdentityUserMultiHostInt(string userName)
+            : base(userName)
         {
             Contract.Requires<ArgumentException>(!userName.IsNullOrWhiteSpace());
-
-            UserName = userName;
         }
     }
 
-    public class IdentityUserMultiHostLong : IdentityUserMultiHost<long, long, IdentityUserLoginMultiHostLong, IdentityUserRoleMultiHostLong, IdentityUserClaimMultiHostLong>
+    public class IdentityUserMultiHostLong : IdentityUserMultiHost<long, long>
     {
         public IdentityUserMultiHostLong()
         {
-            Id = 0; // TODO: how to assign this?
         }
 
         public IdentityUserMultiHostLong(string userName)
-            : this()
+            : base(userName)
         {
             Contract.Requires<ArgumentException>(!userName.IsNullOrWhiteSpace());
-
-            UserName = userName;
         }
     }
 }

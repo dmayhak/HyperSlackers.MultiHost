@@ -14,22 +14,22 @@ namespace HyperSlackers.MultiHost
         THostKey HostId { get; set; }
     }
 
-    public interface IMultiHostUserString : IUserMultiHost<string, string>
+    public interface IUserMultiHostString : IUserMultiHost<string, string>
     {
         
     }
 
-    public interface IMultiHostUserGuid : IUserMultiHost<Guid, Guid>
+    public interface IUserMultiHostGuid : IUserMultiHost<Guid, Guid>
     {
 
     }
 
-    public interface IMultiHostUserInt : IUserMultiHost<int, int>
+    public interface IUserMultiHostInt : IUserMultiHost<int, int>
     {
 
     }
 
-    public interface IMultiHostUserLong : IUserMultiHost<long, long>
+    public interface IUserMultiHostLong : IUserMultiHost<long, long>
     {
 
     }

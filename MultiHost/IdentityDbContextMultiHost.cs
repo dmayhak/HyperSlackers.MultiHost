@@ -14,12 +14,8 @@ using HyperSlackers.MultiHost.Extensions;
 
 namespace HyperSlackers.MultiHost
 {
-    public class IdentityDbContextMultiHost<TUser, TRole, TKey, THostKey, TUserLogin, TUserRole, TUserClaim> : IdentityDbContext<TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim>
-        where TUser : IdentityUserMultiHost<TKey, THostKey, TUserLogin, TUserRole, TUserClaim>, new()
-        where TRole : IdentityRoleMultiHost<TKey, THostKey, TUserRole>
-        where TUserLogin : IdentityUserLoginMultiHost<TKey, THostKey>, new()
-        where TUserRole : IdentityUserRoleMultiHost<TKey>, new()
-        where TUserClaim : IdentityUserClaimMultiHost<TKey>, new()
+    public class IdentityDbContextMultiHost<TUser, TKey, THostKey> : IdentityDbContext<TUser, IdentityRoleMultiHost<TKey, THostKey>, TKey, IdentityUserLoginMultiHost<TKey, THostKey>, IdentityUserRoleMultiHost<TKey>, IdentityUserClaimMultiHost<TKey>>
+        where TUser : IdentityUserMultiHost<TKey, THostKey>, new()
         where TKey : IEquatable<TKey>
         where THostKey : IEquatable<THostKey>
     {
@@ -58,16 +54,15 @@ namespace HyperSlackers.MultiHost
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<TUserLogin>().HasKey(e => new { e.HostId, e.LoginProvider, e.ProviderKey, e.UserId });
-
-            // this has to be in derived types because of the string version of HostId
+            // this has to be in derived types because of the generic stuff
             //x modelBuilder.Entity<TUser>().Property(u => u.HostId).IsRequired().HasColumnAnnotation("Index", new IndexAnnotation(new IndexAttribute("UserNameIndex", 0) { IsUnique = true }));
-            modelBuilder.Entity<TUser>().Property(u => u.UserName).IsRequired().HasColumnAnnotation("Index", new IndexAnnotation(new IndexAttribute("UserNameIndex", 1) { IsUnique = true }));
-            modelBuilder.Entity<TUserLogin>().HasKey(ul => new { ul.HostId, ul.LoginProvider, ul.ProviderKey, ul.UserId });
+            //x modelBuilder.Entity<TUserLogin>().HasKey(e => new { e.HostId, e.LoginProvider, e.ProviderKey, e.UserId });
+            //x modelBuilder.Entity<TUser>().Property(u => u.UserName).IsRequired().HasColumnAnnotation("Index", new IndexAnnotation(new IndexAttribute("UserNameIndex", 1) { IsUnique = true }));
+            //x modelBuilder.Entity<TUserLogin>().HasKey(ul => new { ul.HostId, ul.LoginProvider, ul.ProviderKey, ul.UserId });
         }
     }
 
-    public class IdentityDbContextMultiHostString<TUser> : IdentityDbContextMultiHost<TUser, IdentityRoleMultiHostString, string, string, IdentityUserLoginMultiHostString, IdentityUserRoleMultiHostString, IdentityUserClaimMultiHostString>
+    public class IdentityDbContextMultiHostString<TUser> : IdentityDbContextMultiHost<TUser, string, string>
         where TUser : IdentityUserMultiHostString, new()
     {
         public IdentityDbContextMultiHostString()
@@ -86,10 +81,13 @@ namespace HyperSlackers.MultiHost
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<TUser>().Property(u => u.HostId).IsRequired().HasMaxLength(256).HasColumnAnnotation("Index", new IndexAnnotation(new IndexAttribute("UserNameIndex", 0) { IsUnique = true }));
+            modelBuilder.Entity<IdentityUserLoginMultiHostString>().HasKey(e => new { e.HostId, e.LoginProvider, e.ProviderKey, e.UserId });
+            modelBuilder.Entity<TUser>().Property(u => u.UserName).IsRequired().HasColumnAnnotation("Index", new IndexAnnotation(new IndexAttribute("UserNameIndex", 1) { IsUnique = true }));
+            modelBuilder.Entity<IdentityUserLoginMultiHostString>().HasKey(ul => new { ul.HostId, ul.LoginProvider, ul.ProviderKey, ul.UserId });
         }
     }
 
-    public class IdentityDbContextMultiHostGuid<TUser> : IdentityDbContextMultiHost<TUser, IdentityRoleMultiHostGuid, Guid, Guid, IdentityUserLoginMultiHostGuid, IdentityUserRoleMultiHostGuid, IdentityUserClaimMultiHostGuid>
+    public class IdentityDbContextMultiHostGuid<TUser> : IdentityDbContextMultiHost<TUser, Guid, Guid>
         where TUser : IdentityUserMultiHostGuid, new()
     {
         public IdentityDbContextMultiHostGuid()
@@ -108,10 +106,13 @@ namespace HyperSlackers.MultiHost
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<TUser>().Property(u => u.HostId).IsRequired().HasColumnAnnotation("Index", new IndexAnnotation(new IndexAttribute("UserNameIndex", 0) { IsUnique = true }));
+            modelBuilder.Entity<IdentityUserLoginMultiHostGuid>().HasKey(e => new { e.HostId, e.LoginProvider, e.ProviderKey, e.UserId });
+            modelBuilder.Entity<TUser>().Property(u => u.UserName).IsRequired().HasColumnAnnotation("Index", new IndexAnnotation(new IndexAttribute("UserNameIndex", 1) { IsUnique = true }));
+            modelBuilder.Entity<IdentityUserLoginMultiHostGuid>().HasKey(ul => new { ul.HostId, ul.LoginProvider, ul.ProviderKey, ul.UserId });
         }
     }
 
-    public class IdentityDbContextMultiHostInt<TUser> : IdentityDbContextMultiHost<TUser, IdentityRoleMultiHostInt, int, int, IdentityUserLoginMultiHostInt, IdentityUserRoleMultiHostInt, IdentityUserClaimMultiHostInt>
+    public class IdentityDbContextMultiHostInt<TUser> : IdentityDbContextMultiHost<TUser, int, int>
         where TUser : IdentityUserMultiHostInt, new()
     {
         public IdentityDbContextMultiHostInt()
@@ -130,10 +131,13 @@ namespace HyperSlackers.MultiHost
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<TUser>().Property(u => u.HostId).IsRequired().HasColumnAnnotation("Index", new IndexAnnotation(new IndexAttribute("UserNameIndex", 0) { IsUnique = true }));
+            modelBuilder.Entity<IdentityUserLoginMultiHostInt>().HasKey(e => new { e.HostId, e.LoginProvider, e.ProviderKey, e.UserId });
+            modelBuilder.Entity<TUser>().Property(u => u.UserName).IsRequired().HasColumnAnnotation("Index", new IndexAnnotation(new IndexAttribute("UserNameIndex", 1) { IsUnique = true }));
+            modelBuilder.Entity<IdentityUserLoginMultiHostInt>().HasKey(ul => new { ul.HostId, ul.LoginProvider, ul.ProviderKey, ul.UserId });
         }
     }
 
-    public class IdentityDbContexMultiHosttLong<TUser> : IdentityDbContextMultiHost<TUser, IdentityRoleMultiHostLong, long, long, IdentityUserLoginMultiHostLong, IdentityUserRoleMultiHostLong, IdentityUserClaimMultiHostLong>
+    public class IdentityDbContexMultiHosttLong<TUser> : IdentityDbContextMultiHost<TUser, long, long>
         where TUser : IdentityUserMultiHostLong, new()
     {
         public IdentityDbContexMultiHosttLong()
@@ -152,6 +156,9 @@ namespace HyperSlackers.MultiHost
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<TUser>().Property(u => u.HostId).IsRequired().HasColumnAnnotation("Index", new IndexAnnotation(new IndexAttribute("UserNameIndex", 0) { IsUnique = true }));
+            modelBuilder.Entity<IdentityUserLoginMultiHostLong>().HasKey(e => new { e.HostId, e.LoginProvider, e.ProviderKey, e.UserId });
+            modelBuilder.Entity<TUser>().Property(u => u.UserName).IsRequired().HasColumnAnnotation("Index", new IndexAnnotation(new IndexAttribute("UserNameIndex", 1) { IsUnique = true }));
+            modelBuilder.Entity<IdentityUserLoginMultiHostLong>().HasKey(ul => new { ul.HostId, ul.LoginProvider, ul.ProviderKey, ul.UserId });
         }
     }
 }

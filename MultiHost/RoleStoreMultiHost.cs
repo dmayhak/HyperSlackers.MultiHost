@@ -14,9 +14,9 @@ namespace HyperSlackers.MultiHost
     public class RoleStoreMultiHost<TKey, THostKey, TRole> : RoleStore<TRole, TKey, IdentityUserRoleMultiHost<TKey>>, IQueryableRoleStore<TRole, TKey>, IRoleStore<TRole, TKey>, IDisposable
         where TKey : IEquatable<TKey>
         where THostKey : IEquatable<THostKey>
-        where TRole : IdentityRoleMultiHost<TKey, THostKey, IdentityUserRoleMultiHost<TKey>>, new()
+        where TRole : IdentityRoleMultiHost<TKey, THostKey>, new()
     {
-        public virtual THostKey HostId { get; set; } // TODO: should we have a THostKey here too?
+        public virtual THostKey HostId { get; set; }
         private bool disposed = false;
 
         public RoleStoreMultiHost(DbContext context)
@@ -42,7 +42,7 @@ namespace HyperSlackers.MultiHost
 
         public override async Task CreateAsync(TRole role)
         {
-            //Contract.Requires<ArgumentNullException>(role != null, "role");
+            //x Contract.Requires<ArgumentNullException>(role != null, "role");
 
             if (EqualityComparer<THostKey>.Default.Equals(role.HostId, default(THostKey)))
             {
@@ -62,7 +62,7 @@ namespace HyperSlackers.MultiHost
 
         public new async Task<TRole> FindByNameAsync(string name)
         {
-            //Contract.Requires<ArgumentException>(!name.IsNullOrWhiteSpace());
+            //x Contract.Requires<ArgumentException>(!name.IsNullOrWhiteSpace());
 
             return await FindByNameAsync(name, this.HostId);
         }
@@ -81,7 +81,7 @@ namespace HyperSlackers.MultiHost
             {
                 if (disposing)
                 {
-                    // TODO: anything?
+                    // TODO: cache references? if so, release them here
 
                     this.disposed = true;
                 }
@@ -91,7 +91,7 @@ namespace HyperSlackers.MultiHost
         }
     }
 
-    public class RoleStoreMultiHostString : RoleStoreMultiHost<string, string, IdentityRoleMultiHost<string, string, IdentityUserRoleMultiHost<string>>>
+    public class RoleStoreMultiHostString : RoleStoreMultiHost<string, string, IdentityRoleMultiHost<string, string>>
     {
         public RoleStoreMultiHostString(DbContext context)
             : base(context)
@@ -103,11 +103,11 @@ namespace HyperSlackers.MultiHost
             : base(context, hostId)
         {
             Contract.Requires<ArgumentNullException>(context != null, "context");
-            Contract.Requires<ArgumentException>(!hostId.IsNullOrWhiteSpace()); // TODO: what about a "default" host
+            Contract.Requires<ArgumentException>(!hostId.IsNullOrWhiteSpace());
         }
     }
 
-    public class RoleStoreMultiHostGuid : RoleStoreMultiHost<Guid, Guid, IdentityRoleMultiHost<Guid, Guid, IdentityUserRoleMultiHost<Guid>>>
+    public class RoleStoreMultiHostGuid : RoleStoreMultiHost<Guid, Guid, IdentityRoleMultiHost<Guid, Guid>>
     {
         public RoleStoreMultiHostGuid(DbContext context)
             : base(context)
@@ -119,11 +119,11 @@ namespace HyperSlackers.MultiHost
             : base(context, hostId)
         {
             Contract.Requires<ArgumentNullException>(context != null, "context");
-            Contract.Requires<ArgumentNullException>(hostId != Guid.Empty, "hostId"); // TODO: what about a "default" host
+            Contract.Requires<ArgumentNullException>(hostId != Guid.Empty, "hostId");
         }
     }
 
-    public class RoleStoreMultiHostInt : RoleStoreMultiHost<int, int, IdentityRoleMultiHost<int, int, IdentityUserRoleMultiHost<int>>>
+    public class RoleStoreMultiHostInt : RoleStoreMultiHost<int, int, IdentityRoleMultiHost<int, int>>
     {
         public RoleStoreMultiHostInt(DbContext context)
             : base(context)
@@ -135,11 +135,11 @@ namespace HyperSlackers.MultiHost
             : base(context, hostId)
         {
             Contract.Requires<ArgumentNullException>(context != null, "context");
-            Contract.Requires<ArgumentException>(hostId > 0); // TODO: what about a "default" host
+            Contract.Requires<ArgumentException>(hostId > 0);
         }
     }
 
-    public class RoleStoreMultiHostLong : RoleStoreMultiHost<long, long, IdentityRoleMultiHost<long, long, IdentityUserRoleMultiHost<long>>>
+    public class RoleStoreMultiHostLong : RoleStoreMultiHost<long, long, IdentityRoleMultiHost<long, long>>
     {
         public RoleStoreMultiHostLong(DbContext context)
             : base(context)
@@ -151,7 +151,7 @@ namespace HyperSlackers.MultiHost
             : base(context, hostId)
         {
             Contract.Requires<ArgumentNullException>(context != null, "context");
-            Contract.Requires<ArgumentException>(hostId > 0); // TODO: what about a "default" host
+            Contract.Requires<ArgumentException>(hostId > 0);
         }
     }
 }

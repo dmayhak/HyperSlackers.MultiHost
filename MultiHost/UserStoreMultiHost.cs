@@ -11,14 +11,10 @@ using Microsoft.AspNet.Identity;
 
 namespace HyperSlackers.MultiHost
 {
-    public class UserStoreMultiHost<TUser, TRole, TKey, THostKey, TUserLogin, TUserRole, TUserClaim> : UserStore<TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim>
-        where TUser : IdentityUserMultiHost<TKey, THostKey, TUserLogin, TUserRole, TUserClaim>, new()
-        where TRole : IdentityRoleMultiHost<TKey, THostKey, TUserRole>
+    public class UserStoreMultiHost<TUser, TKey, THostKey> : UserStore<TUser, IdentityRoleMultiHost<TKey, THostKey>, TKey, IdentityUserLoginMultiHost<TKey, THostKey>, IdentityUserRoleMultiHost<TKey>, IdentityUserClaimMultiHost<TKey>>
+        where TUser : IdentityUserMultiHost<TKey, THostKey>, new()
         where TKey : IEquatable<TKey>
         where THostKey : IEquatable<THostKey>
-        where TUserLogin : IdentityUserLoginMultiHost<TKey, THostKey>, new()
-        where TUserRole : IdentityUserRoleMultiHost<TKey>, new()
-        where TUserClaim : IdentityUserClaimMultiHost<TKey>, new()
     {
         public THostKey HostId { get; set; }
         private bool disposed = false;
@@ -44,7 +40,7 @@ namespace HyperSlackers.MultiHost
             Contract.Requires<ArgumentNullException>(login != null, "login");
             Contract.Requires<ArgumentNullException>(!EqualityComparer<THostKey>.Default.Equals(user.HostId, default(THostKey)), "User.HostId");
 
-            var userLogin = new TUserLogin
+            var userLogin = new IdentityUserLoginMultiHost<TKey, THostKey>
             {
                 HostId = user.HostId,
                 UserId = user.Id,
@@ -83,10 +79,7 @@ namespace HyperSlackers.MultiHost
             Contract.Requires<ArgumentNullException>(login != null, "login");
             Contract.Requires<ArgumentNullException>(!EqualityComparer<THostKey>.Default.Equals(hostId, default(THostKey)), "hostId");
 
-            TKey userId = await Context.Set<TUserLogin>().Where(l => l.LoginProvider == login.LoginProvider && l.ProviderKey == login.ProviderKey && l.HostId.Equals(hostId))
-                .Select(l => l.UserId)
-                .SingleOrDefaultAsync()
-                .ConfigureAwait(false);
+            TKey userId = FindUserId(login, hostId);
 
             if (EqualityComparer<TKey>.Default.Equals(userId, default(TKey)))
             {
@@ -94,6 +87,14 @@ namespace HyperSlackers.MultiHost
             }
 
             return await Context.Set<TUser>().FindAsync(userId).ConfigureAwait(false);
+        }
+
+        internal virtual TKey FindUserId(UserLoginInfo login, THostKey hostId)
+        {
+            Contract.Requires<ArgumentNullException>(login != null, "login");
+            Contract.Requires<ArgumentNullException>(!EqualityComparer<THostKey>.Default.Equals(hostId, default(THostKey)), "hostId");
+
+            throw new NotImplementedException();
         }
 
         public new async Task<TUser> FindByEmailAsync(string email)
@@ -132,32 +133,17 @@ namespace HyperSlackers.MultiHost
             {
                 if (disposing)
                 {
-                    // anything
+                    // TODO: cache references? if so, release them here
 
                     this.disposed = true;
                 }
             }
-        }
 
+            base.Dispose(disposing);
+        }
     }
 
-    //public class UserStoreMultiHost<TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim> : UserStoreMultiHost<TUser, TRole, TKey, TKey, TUserLogin, TUserRole, TUserClaim>
-    //{
-    //    public UserStoreMultiHost(DbContext context, TKey hostId)
-    //        : base(context, hostId)
-    //    {
-    //        Contract.Requires<ArgumentNullException>(context != null, "context");
-    //    }
-    //}
-
-    public class UserStoreMultiHostString
-        : UserStoreMultiHost<IdentityUserMultiHost<string, string, IdentityUserLoginMultiHost<string, string>, IdentityUserRoleMultiHost<string>, IdentityUserClaimMultiHost<string>>,
-        IdentityRoleMultiHost<string, string, IdentityUserRoleMultiHost<string>>,
-        string,
-        string,
-        IdentityUserLoginMultiHost<string, string>,
-        IdentityUserRoleMultiHost<string>,
-        IdentityUserClaimMultiHost<string>>
+    public class UserStoreMultiHostString : UserStoreMultiHost<IdentityUserMultiHost<string, string>, string, string>
     {
         public UserStoreMultiHostString(DbContext context)
             : base(context)
@@ -174,23 +160,18 @@ namespace HyperSlackers.MultiHost
 
         public UserManagerMultiHostString GetUserManager()
         {
-            var manager = new UserManagerMultiHostString(this);
+            return new UserManagerMultiHostString(this);
+        }
 
-            // allow duplicate emails and funky chars
-            manager.UserValidator = new UserValidator<IdentityUserMultiHost<string, string, IdentityUserLoginMultiHost<string, string>, IdentityUserRoleMultiHost<string>, IdentityUserClaimMultiHost<string>>, string>(manager) { AllowOnlyAlphanumericUserNames = false, RequireUniqueEmail = false };
-
-            return manager;
+        internal override string FindUserId(UserLoginInfo login, string hostId)
+        {
+            return Context.Set<IdentityUserLoginMultiHostString>().Where(l => l.LoginProvider == login.LoginProvider && l.ProviderKey == login.ProviderKey && l.HostId.Equals(hostId))
+                .Select(l => l.UserId)
+                .SingleOrDefault();
         }
     }
 
-    public class UserStoreMultiHostGuid
-        : UserStoreMultiHost<IdentityUserMultiHost<Guid, Guid, IdentityUserLoginMultiHost<Guid, Guid>, IdentityUserRoleMultiHost<Guid>, IdentityUserClaimMultiHost<Guid>>,
-        IdentityRoleMultiHost<Guid, Guid, IdentityUserRoleMultiHost<Guid>>,
-        Guid,
-        Guid,
-        IdentityUserLoginMultiHost<Guid, Guid>,
-        IdentityUserRoleMultiHost<Guid>,
-        IdentityUserClaimMultiHost<Guid>>
+    public class UserStoreMultiHostGuid : UserStoreMultiHost<IdentityUserMultiHost<Guid, Guid>, Guid, Guid>
     {
         public UserStoreMultiHostGuid(DbContext context)
             : base(context)
@@ -204,16 +185,21 @@ namespace HyperSlackers.MultiHost
             Contract.Requires<ArgumentNullException>(context != null, "context");
             Contract.Requires<ArgumentNullException>(hostId != Guid.Empty, "hostId"); // TODO: what about a "default" host
         }
+
+        public UserManagerMultiHostGuid GetUserManager()
+        {
+            return new UserManagerMultiHostGuid(this);
+        }
+
+        internal override Guid FindUserId(UserLoginInfo login, Guid hostId)
+        {
+            return Context.Set<IdentityUserLoginMultiHostGuid>().Where(l => l.LoginProvider == login.LoginProvider && l.ProviderKey == login.ProviderKey && l.HostId.Equals(hostId))
+                .Select(l => l.UserId)
+                .SingleOrDefault();
+        }
     }
 
-    public class UserStoreMultiHostInt
-        : UserStoreMultiHost<IdentityUserMultiHost<int, int, IdentityUserLoginMultiHost<int, int>, IdentityUserRoleMultiHost<int>, IdentityUserClaimMultiHost<int>>,
-        IdentityRoleMultiHost<int, int, IdentityUserRoleMultiHost<int>>,
-        int,
-        int,
-        IdentityUserLoginMultiHost<int, int>,
-        IdentityUserRoleMultiHost<int>,
-        IdentityUserClaimMultiHost<int>>
+    public class UserStoreMultiHostInt : UserStoreMultiHost<IdentityUserMultiHost<int, int>, int, int>
     {
         public UserStoreMultiHostInt(DbContext context)
             : base(context)
@@ -227,16 +213,21 @@ namespace HyperSlackers.MultiHost
             Contract.Requires<ArgumentNullException>(context != null, "context");
             Contract.Requires<ArgumentException>(hostId > 0); // TODO: what about a "default" host
         }
+
+        public UserManagerMultiHostInt GetUserManager()
+        {
+            return new UserManagerMultiHostInt(this);
+        }
+
+        internal override int FindUserId(UserLoginInfo login, int hostId)
+        {
+            return Context.Set<IdentityUserLoginMultiHostInt>().Where(l => l.LoginProvider == login.LoginProvider && l.ProviderKey == login.ProviderKey && l.HostId.Equals(hostId))
+                .Select(l => l.UserId)
+                .SingleOrDefault();
+        }
     }
 
-    public class UserStoreMultiHostLong
-        : UserStoreMultiHost<IdentityUserMultiHost<long, long, IdentityUserLoginMultiHost<long, long>, IdentityUserRoleMultiHost<long>, IdentityUserClaimMultiHost<long>>,
-        IdentityRoleMultiHost<long, long, IdentityUserRoleMultiHost<long>>,
-        long,
-        long,
-        IdentityUserLoginMultiHost<long, long>,
-        IdentityUserRoleMultiHost<long>,
-        IdentityUserClaimMultiHost<long>>
+    public class UserStoreMultiHostLong : UserStoreMultiHost<IdentityUserMultiHost<long, long>, long, long>
     {
         public UserStoreMultiHostLong(DbContext context)
             : base(context)
@@ -249,6 +240,18 @@ namespace HyperSlackers.MultiHost
         {
             Contract.Requires<ArgumentNullException>(context != null, "context");
             Contract.Requires<ArgumentException>(hostId > 0); // TODO: what about a "default" host
+        }
+
+        public UserManagerMultiHostLong GetUserManager()
+        {
+            return new UserManagerMultiHostLong(this);
+        }
+
+        internal override long FindUserId(UserLoginInfo login, long hostId)
+        {
+            return Context.Set<IdentityUserLoginMultiHostLong>().Where(l => l.LoginProvider == login.LoginProvider && l.ProviderKey == login.ProviderKey && l.HostId.Equals(hostId))
+                .Select(l => l.UserId)
+                .SingleOrDefault();
         }
     }
 }

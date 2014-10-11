@@ -9,14 +9,12 @@ using HyperSlackers.MultiHost.Extensions;
 
 namespace HyperSlackers.MultiHost
 {
-    public class IdentityRoleMultiHost<TKey, THostKey, TUserRole> : IdentityRole<TKey, TUserRole>
+    public class IdentityRoleMultiHost<TKey, THostKey> : IdentityRole<TKey, IdentityUserRoleMultiHost<TKey>>
         where TKey : IEquatable<TKey>
         where THostKey : IEquatable<THostKey>
-        where TUserRole : IdentityUserRoleMultiHost<TKey>
     {
         // this allows for Roles to be different for each host
-        // TODO: use default(THostKey) for global Roles???
-        public THostKey HostId { get; set; } 
+        public THostKey HostId { get; set; }
 
         public IdentityRoleMultiHost()
         {
@@ -30,16 +28,16 @@ namespace HyperSlackers.MultiHost
         }
 
         public IdentityRoleMultiHost(string name, THostKey hostId)
-            : this(name)
         {
             Contract.Requires<ArgumentException>(!name.IsNullOrWhiteSpace());
             Contract.Requires<ArgumentNullException>(!EqualityComparer<THostKey>.Default.Equals(hostId, default(THostKey)), "hostId");
 
+            this.Name = name;
             this.HostId = hostId;
         }
     }
 
-    public class IdentityRoleMultiHostString : IdentityRoleMultiHost<string, string, IdentityUserRoleMultiHostString>
+    public class IdentityRoleMultiHostString : IdentityRoleMultiHost<string, string>
     {
         public IdentityRoleMultiHostString()
         {
@@ -55,11 +53,11 @@ namespace HyperSlackers.MultiHost
             : base(name, hostId)
         {
             Contract.Requires<ArgumentException>(!name.IsNullOrWhiteSpace());
-            Contract.Requires<ArgumentException>(!hostId.IsNullOrWhiteSpace()); // what about string.Empty for site-wide roles?
+            Contract.Requires<ArgumentException>(!hostId.IsNullOrWhiteSpace()); 
         }
     }
 
-    public class IdentityRoleMultiHostGuid : IdentityRoleMultiHost<Guid, Guid, IdentityUserRoleMultiHostGuid>
+    public class IdentityRoleMultiHostGuid : IdentityRoleMultiHost<Guid, Guid>
     {
         public IdentityRoleMultiHostGuid()
         {
@@ -75,11 +73,11 @@ namespace HyperSlackers.MultiHost
             : base(name, hostId)
         {
             Contract.Requires<ArgumentException>(!name.IsNullOrWhiteSpace());
-            Contract.Requires<ArgumentNullException>(hostId != Guid.Empty, "hostId"); // what about Guid.Empty for site-wide roles?
+            Contract.Requires<ArgumentNullException>(hostId != Guid.Empty, "hostId");
         }
     }
 
-    public class IdentityRoleMultiHostInt : IdentityRoleMultiHost<int, int, IdentityUserRoleMultiHostInt>
+    public class IdentityRoleMultiHostInt : IdentityRoleMultiHost<int, int>
     {
         public IdentityRoleMultiHostInt()
         {
@@ -95,11 +93,11 @@ namespace HyperSlackers.MultiHost
             : base(name, hostId)
         {
             Contract.Requires<ArgumentException>(!name.IsNullOrWhiteSpace());
-            Contract.Requires<ArgumentNullException>(hostId > 0, "hostId"); // what about 0 for site-wide roles?
+            Contract.Requires<ArgumentNullException>(hostId > 0, "hostId");
         }
     }
 
-    public class IdentityRoleMultiHostLong : IdentityRoleMultiHost<long, long, IdentityUserRoleMultiHostLong>
+    public class IdentityRoleMultiHostLong : IdentityRoleMultiHost<long, long>
     {
         public IdentityRoleMultiHostLong()
         {
@@ -115,7 +113,7 @@ namespace HyperSlackers.MultiHost
             : base(name, hostId)
         {
             Contract.Requires<ArgumentException>(!name.IsNullOrWhiteSpace());
-            Contract.Requires<ArgumentNullException>(hostId > 0, "hostId"); // what about 0 for site-wide roles?
+            Contract.Requires<ArgumentNullException>(hostId > 0, "hostId");
         }
     }
 }

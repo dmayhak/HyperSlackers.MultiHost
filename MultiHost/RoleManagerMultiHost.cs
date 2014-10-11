@@ -12,9 +12,10 @@ namespace HyperSlackers.MultiHost
     public class RoleManagerMultiHost<TKey, THostKey, TRole> : RoleManager<TRole, TKey>
         where TKey : IEquatable<TKey>
         where THostKey : IEquatable<THostKey>
-        where TRole : IdentityRoleMultiHost<TKey, THostKey, IdentityUserRoleMultiHost<TKey>>, new()
+        where TRole : IdentityRoleMultiHost<TKey, THostKey>, new()
     {
-        public virtual THostKey HostId { get; set; } // TODO: do we need this?   are roles specific to each host?
+        public virtual THostKey HostId { get; set; }
+        private bool disposed = false;
 
         public RoleManagerMultiHost(RoleStoreMultiHost<TKey, THostKey, TRole> store)
             : base(store)
@@ -33,7 +34,7 @@ namespace HyperSlackers.MultiHost
 
         public override async Task<bool> RoleExistsAsync(string roleName)
         {
-            //Contract.Requires<ArgumentException>(!roleName.IsNullOrWhiteSpace());
+            //x Contract.Requires<ArgumentException>(!roleName.IsNullOrWhiteSpace());
 
             return await Task.FromResult(RoleExists(roleName, this.HostId));
         }
@@ -45,9 +46,24 @@ namespace HyperSlackers.MultiHost
 
             return Roles.Any(r => r.Name == roleName && r.HostId.Equals(hostId));
         }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (!this.disposed)
+            {
+                if (disposing)
+                {
+                    // TODO: cache references? if so, release them here
+
+                    this.disposed = true;
+                }
+            }
+
+            base.Dispose(disposing);
+        }
     }
 
-    public class RoleManagerMultiHostString : RoleManagerMultiHost<string, string, IdentityRoleMultiHost<string, string, IdentityUserRoleMultiHost<string>>>
+    public class RoleManagerMultiHostString : RoleManagerMultiHost<string, string, IdentityRoleMultiHost<string, string>>
     {
         public RoleManagerMultiHostString(RoleStoreMultiHostString store)
             : base(store)
@@ -63,7 +79,7 @@ namespace HyperSlackers.MultiHost
         }
     }
 
-    public class RoleManagerMultiHostGuid : RoleManagerMultiHost<Guid, Guid, IdentityRoleMultiHost<Guid, Guid, IdentityUserRoleMultiHost<Guid>>>
+    public class RoleManagerMultiHostGuid : RoleManagerMultiHost<Guid, Guid, IdentityRoleMultiHost<Guid, Guid>>
     {
         public RoleManagerMultiHostGuid(RoleStoreMultiHostGuid store)
             : base(store)
@@ -79,7 +95,7 @@ namespace HyperSlackers.MultiHost
         }
     }
 
-    public class RoleManagerMultiHostInt : RoleManagerMultiHost<int, int, IdentityRoleMultiHost<int, int, IdentityUserRoleMultiHost<int>>>
+    public class RoleManagerMultiHostInt : RoleManagerMultiHost<int, int, IdentityRoleMultiHost<int, int>>
     {
         public RoleManagerMultiHostInt(RoleStoreMultiHostInt store)
             : base(store)
@@ -95,7 +111,7 @@ namespace HyperSlackers.MultiHost
         }
     }
 
-    public class RoleManagerMultiHostLong : RoleManagerMultiHost<long, long, IdentityRoleMultiHost<long, long, IdentityUserRoleMultiHost<long>>>
+    public class RoleManagerMultiHostLong : RoleManagerMultiHost<long, long, IdentityRoleMultiHost<long, long>>
     {
         public RoleManagerMultiHostLong(RoleStoreMultiHostLong store)
             : base(store)
