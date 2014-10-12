@@ -14,6 +14,13 @@ using HyperSlackers.MultiHost.Extensions;
 
 namespace HyperSlackers.MultiHost
 {
+    /// <summary>
+    /// Generic <c>IdentityDbContextMultiHost</c> base that allows the ASP.NET Identity system to support multiple
+    /// hosts in a single application (multi-tenancy).
+    /// </summary>
+    /// <typeparam name="TUser">A user type derived from <c>IdentityRoleMultiHost{TKey, THostKey}</c>.</typeparam>
+    /// <typeparam name="TKey">The key type. (Typically <c>string</c>, <c>Guid</c>, <c>int</c>, or <c>long</c>.)</typeparam>
+    /// <typeparam name="THostKey">The host id key type. (Typically <c>string</c>, <c>Guid</c>, <c>int</c>, or <c>long</c>.)</typeparam>
     public class IdentityDbContextMultiHost<TUser, TKey, THostKey> : IdentityDbContext<TUser, IdentityRoleMultiHost<TKey, THostKey>, TKey, IdentityUserLoginMultiHost<TKey, THostKey>, IdentityUserRoleMultiHost<TKey>, IdentityUserClaimMultiHost<TKey>>
         where TUser : IdentityUserMultiHost<TKey, THostKey>, new()
         where TKey : IEquatable<TKey>
@@ -62,14 +69,25 @@ namespace HyperSlackers.MultiHost
         }
     }
 
+    /// <summary>
+    /// Multi-tenant <c>IdentityDContest</c> having both key and host key as <c>string</c> types
+    /// </summary>
+    /// <typeparam name="TUser">A user type derived from <c>IdentityUserMultiHostString</c>.</typeparam>
     public class IdentityDbContextMultiHostString<TUser> : IdentityDbContextMultiHost<TUser, string, string>
         where TUser : IdentityUserMultiHostString, new()
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IdentityDbContextMultiHostString{TUser}"/> class.
+        /// </summary>
         public IdentityDbContextMultiHostString()
             : this("DefaultConnection")
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IdentityDbContextMultiHostString{TUser}"/> class.
+        /// </summary>
+        /// <param name="nameOrConnectionString">The name or connection string.</param>
         public IdentityDbContextMultiHostString(string nameOrConnectionString)
             : base(nameOrConnectionString)
         {
@@ -87,14 +105,25 @@ namespace HyperSlackers.MultiHost
         }
     }
 
+    /// <summary>
+    /// Multi-tenant <c>IdentityDContest</c> having both key and host key as <c>Guid</c> types
+    /// </summary>
+    /// <typeparam name="TUser">A user type derived from <c>IdentityUserMultiHostGuid</c>.</typeparam>
     public class IdentityDbContextMultiHostGuid<TUser> : IdentityDbContextMultiHost<TUser, Guid, Guid>
         where TUser : IdentityUserMultiHostGuid, new()
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IdentityDbContextMultiHostGuid{TUser}"/> class.
+        /// </summary>
         public IdentityDbContextMultiHostGuid()
             : this("DefaultConnection")
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IdentityDbContextMultiHostGuid{TUser}"/> class.
+        /// </summary>
+        /// <param name="nameOrConnectionString">The name or connection string.</param>
         public IdentityDbContextMultiHostGuid(string nameOrConnectionString)
             : base(nameOrConnectionString)
         {
@@ -112,14 +141,25 @@ namespace HyperSlackers.MultiHost
         }
     }
 
+    /// <summary>
+    /// Multi-tenant <c>IdentityDContest</c> having both key and host key as <c>int</c> types
+    /// </summary>
+    /// <typeparam name="TUser">A user type derived from <c>IdentityUserMultiHostInt</c>.</typeparam>
     public class IdentityDbContextMultiHostInt<TUser> : IdentityDbContextMultiHost<TUser, int, int>
         where TUser : IdentityUserMultiHostInt, new()
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IdentityDbContextMultiHostInt{TUser}"/> class.
+        /// </summary>
         public IdentityDbContextMultiHostInt()
             : this("DefaultConnection")
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IdentityDbContextMultiHostInt{TUser}"/> class.
+        /// </summary>
+        /// <param name="nameOrConnectionString">The name or connection string.</param>
         public IdentityDbContextMultiHostInt(string nameOrConnectionString)
             : base(nameOrConnectionString)
         {
@@ -137,14 +177,25 @@ namespace HyperSlackers.MultiHost
         }
     }
 
+    /// <summary>
+    /// Multi-tenant <c>IdentityDContest</c> having both key and host key as <c>long</c> types
+    /// </summary>
+    /// <typeparam name="TUser">A user type derived from <c>IdentityUserMultiHostLong</c>.</typeparam>
     public class IdentityDbContexMultiHosttLong<TUser> : IdentityDbContextMultiHost<TUser, long, long>
         where TUser : IdentityUserMultiHostLong, new()
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IdentityDbContexMultiHosttLong{TUser}"/> class.
+        /// </summary>
         public IdentityDbContexMultiHosttLong()
             : this("DefaultConnection")
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IdentityDbContexMultiHosttLong{TUser}"/> class.
+        /// </summary>
+        /// <param name="nameOrConnectionString">The name or connection string.</param>
         public IdentityDbContexMultiHosttLong(string nameOrConnectionString)
             : base(nameOrConnectionString)
         {
