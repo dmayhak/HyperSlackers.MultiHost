@@ -1,4 +1,8 @@
-﻿using Microsoft.AspNet.Identity;
+﻿// Copyright (C) 2014 Del Mayhak
+//
+// This software may be modified and distributed under the terms
+// of the MIT license.  See the LICENSE.TXT file for details.
+using Microsoft.AspNet.Identity;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;

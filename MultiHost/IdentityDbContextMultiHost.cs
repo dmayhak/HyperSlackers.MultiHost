@@ -1,4 +1,8 @@
-﻿using Microsoft.AspNet.Identity.EntityFramework;
+﻿// Copyright (C) 2014 Del Mayhak
+//
+// This software may be modified and distributed under the terms
+// of the MIT license.  See the LICENSE.TXT file for details.
+using Microsoft.AspNet.Identity.EntityFramework;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
