@@ -1,7 +1,8 @@
 ﻿// Copyright (C) 2014 Del Mayhak
 //
 // This software may be modified and distributed under the terms
-// of the MIT license.  See the LICENSE.TXT file for details.
+// of the MIT license.  See the LICENSE file for details.
+
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -36,5 +37,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("14.1012.1658.104")]
-[assembly: AssemblyFileVersion("14.1012.1658.104")]
+[assembly: AssemblyVersion("14.1013.1609.105")]
+[assembly: AssemblyFileVersion("14.1013.1609.105")]
