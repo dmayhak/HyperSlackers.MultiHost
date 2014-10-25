@@ -35,6 +35,12 @@ namespace HyperSlackers.MultiHost
     {
         public TKey HostId { get; private set; }
         public TKey SystemHostId { get; private set; }
+        public string UsersTableName { get; set; }
+        public string RolesTableName { get; set; }
+        public string UserClaimsTableName { get; set; }
+        public string UserLoginsTableName { get; set; }
+        public string UserRolesTableName { get; set; }
+        public string SchemaName { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityDbContextMultiHost{TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim}"/> class.
@@ -98,12 +104,21 @@ namespace HyperSlackers.MultiHost
             base.OnModelCreating(modelBuilder);
 
             // TUser HostId has to be in derived types...
-            modelBuilder.Entity<TRole>().ToTable("AspNetRoles");
-            modelBuilder.Entity<TUserClaim>().ToTable("AspNetUserClaims");
-            modelBuilder.Entity<TUserLogin>().ToTable("AspNetUserLogins").HasKey(e => new { e.LoginProvider, e.ProviderKey, e.UserId });
-            modelBuilder.Entity<TUserRole>().ToTable("AspNetUserRoles").HasKey(e => new { e.UserId, e.RoleId });
-            modelBuilder.Entity<TUser>().ToTable("AspNetUsers");
-            modelBuilder.Entity<TUser>().Property(u => u.UserName).IsRequired().HasColumnAnnotation("Index", new IndexAnnotation(new IndexAttribute("UserNameIndex", 1) { IsUnique = true }));
+            modelBuilder.Entity<TRole>()
+                .ToTable((RolesTableName.IsNullOrWhiteSpace() ? "AspNetRoles" : RolesTableName), (SchemaName.IsNullOrWhiteSpace() ? "dbo" : SchemaName));
+            modelBuilder.Entity<TUserClaim>()
+                .ToTable((UserClaimsTableName.IsNullOrWhiteSpace() ? "AspNetUserClaims" : UserClaimsTableName), (SchemaName.IsNullOrWhiteSpace() ? "dbo" : SchemaName));
+            modelBuilder.Entity<TUserLogin>()
+                .ToTable((UserLoginsTableName.IsNullOrWhiteSpace() ? "AspNetUserLogins" : UserLoginsTableName), (SchemaName.IsNullOrWhiteSpace() ? "dbo" : SchemaName))
+                .HasKey(e => new { e.LoginProvider, e.ProviderKey, e.UserId });
+            modelBuilder.Entity<TUserRole>()
+                .ToTable((UserRolesTableName.IsNullOrWhiteSpace() ? "AspNetUserRoles" : UserRolesTableName), (SchemaName.IsNullOrWhiteSpace() ? "dbo" : SchemaName))
+                .HasKey(e => new { e.UserId, e.RoleId });
+            modelBuilder.Entity<TUser>()
+                .ToTable((UsersTableName.IsNullOrWhiteSpace() ? "AspNetUsers" : UsersTableName), (SchemaName.IsNullOrWhiteSpace() ? "dbo" : SchemaName));
+            modelBuilder.Entity<TUser>()
+                .Property(u => u.UserName).IsRequired()
+                .HasColumnAnnotation("Index", new IndexAnnotation(new IndexAttribute("UserNameIndex", 1) { IsUnique = true }));
         }
     }
 
