@@ -18,46 +18,40 @@ namespace HyperSlackers.MultiHost
     /// Represents a <c>Role</c> entity for a multi-tenant DbContext.
     /// </summary>
     /// <typeparam name="TKey">The key type. (Typically <c>string</c>, <c>Guid</c>, <c>int</c>, or <c>long</c>.)</typeparam>
-    /// <typeparam name="THostKey">The host id key type. (Typically <c>string</c>, <c>Guid</c>, <c>int</c>, or <c>long</c>.)</typeparam>
-    public class IdentityRoleMultiHost<TKey, THostKey> : IdentityRole<TKey, IdentityUserRoleMultiHost<TKey>>
+    public class IdentityRoleMultiHost<TKey, TUserRole> : IdentityRole<TKey, TUserRole>, IRoleMultiHost<TKey>
         where TKey : IEquatable<TKey>
-        where THostKey : IEquatable<THostKey>
+        where TUserRole : Microsoft.AspNet.Identity.EntityFramework.IdentityUserRole<TKey>, IUserRoleMultiHost<TKey>, new()
     {
-        /// <summary>
-        /// Gets or sets the host id.
-        /// </summary>
-        /// <value>
-        /// The host id.
-        /// </value>
-        public THostKey HostId { get; set; }
+        public TKey HostId { get; set; }
+        public bool IsGlobal { get; set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="IdentityRoleMultiHost{TKey, THostKey}"/> class.
+        /// Initializes a new instance of the <see cref="IdentityRoleMultiHost{TKey}"/> class.
         /// </summary>
         public IdentityRoleMultiHost()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="IdentityRoleMultiHost{TKey, THostKey}"/> class.
+        /// Initializes a new instance of the <see cref="IdentityRoleMultiHost{TKey}"/> class.
         /// </summary>
         /// <param name="name">The role name.</param>
         public IdentityRoleMultiHost(string name)
         {
-            Contract.Requires<ArgumentException>(!name.IsNullOrWhiteSpace());
+            Contract.Requires<ArgumentNullException>(!name.IsNullOrWhiteSpace(), "name");
 
             this.Name = name;
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="IdentityRoleMultiHost{TKey, THostKey}"/> class.
+        /// Initializes a new instance of the <see cref="IdentityRoleMultiHost{TKey}"/> class.
         /// </summary>
         /// <param name="name">The role name.</param>
-        /// <param name="hostId">The host ide.</param>
-        public IdentityRoleMultiHost(string name, THostKey hostId)
+        /// <param name="hostId">The host id.</param>
+        public IdentityRoleMultiHost(string name, TKey hostId)
         {
-            Contract.Requires<ArgumentException>(!name.IsNullOrWhiteSpace());
-            Contract.Requires<ArgumentNullException>(!EqualityComparer<THostKey>.Default.Equals(hostId, default(THostKey)), "hostId");
+            Contract.Requires<ArgumentNullException>(!name.IsNullOrWhiteSpace(), "name");
+            Contract.Requires<ArgumentNullException>(!hostId.Equals(default(TKey)), "hostId");
 
             this.Name = name;
             this.HostId = hostId;
@@ -67,7 +61,7 @@ namespace HyperSlackers.MultiHost
     /// <summary>
     /// Multi-tenant <c>Role</c> having both key and host key as <c>string</c> types
     /// </summary>
-    public class IdentityRoleMultiHostString : IdentityRoleMultiHost<string, string>
+    public class IdentityRoleMultiHostString : IdentityRoleMultiHost<string, IdentityUserRoleMultiHostString>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityRoleMultiHostString"/> class.
@@ -79,30 +73,30 @@ namespace HyperSlackers.MultiHost
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityRoleMultiHostString"/> class.
         /// </summary>
-        /// <param name="name">The role name.</param>
+        /// <param name="name">The name.</param>
         public IdentityRoleMultiHostString(string name)
             : base(name)
         {
-            Contract.Requires<ArgumentException>(!name.IsNullOrWhiteSpace());
+            Contract.Requires<ArgumentNullException>(!name.IsNullOrWhiteSpace(), "name");
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityRoleMultiHostString"/> class.
         /// </summary>
-        /// <param name="name">The role name.</param>
-        /// <param name="hostId">The host id.</param>
+        /// <param name="name">The name.</param>
+        /// <param name="hostId">The host identifier.</param>
         public IdentityRoleMultiHostString(string name, string hostId)
             : base(name, hostId)
         {
-            Contract.Requires<ArgumentException>(!name.IsNullOrWhiteSpace());
-            Contract.Requires<ArgumentException>(!hostId.IsNullOrWhiteSpace()); 
+            Contract.Requires<ArgumentNullException>(!name.IsNullOrWhiteSpace(), "name");
+            Contract.Requires<ArgumentNullException>(!hostId.IsNullOrWhiteSpace(), "hostId");
         }
     }
 
     /// <summary>
     /// Multi-tenant <c>Role</c> having both key and host key as <c>Guid</c> types
     /// </summary>
-    public class IdentityRoleMultiHostGuid : IdentityRoleMultiHost<Guid, Guid>
+    public class IdentityRoleMultiHostGuid : IdentityRoleMultiHost<Guid, IdentityUserRoleMultiHostGuid>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityRoleMultiHostGuid"/> class.
@@ -114,22 +108,22 @@ namespace HyperSlackers.MultiHost
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityRoleMultiHostGuid"/> class.
         /// </summary>
-        /// <param name="name">The role name.</param>
+        /// <param name="name">The name.</param>
         public IdentityRoleMultiHostGuid(string name)
             : base(name)
         {
-            Contract.Requires<ArgumentException>(!name.IsNullOrWhiteSpace());
+            Contract.Requires<ArgumentNullException>(!name.IsNullOrWhiteSpace(), "name");
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityRoleMultiHostGuid"/> class.
         /// </summary>
-        /// <param name="name">The role name.</param>
-        /// <param name="hostId">The host id.</param>
+        /// <param name="name">The name.</param>
+        /// <param name="hostId">The host identifier.</param>
         public IdentityRoleMultiHostGuid(string name, Guid hostId)
             : base(name, hostId)
         {
-            Contract.Requires<ArgumentException>(!name.IsNullOrWhiteSpace());
+            Contract.Requires<ArgumentNullException>(!name.IsNullOrWhiteSpace(), "name");
             Contract.Requires<ArgumentNullException>(hostId != Guid.Empty, "hostId");
         }
     }
@@ -137,7 +131,7 @@ namespace HyperSlackers.MultiHost
     /// <summary>
     /// Multi-tenant <c>Role</c> having both key and host key as <c>int</c> types
     /// </summary>
-    public class IdentityRoleMultiHostInt : IdentityRoleMultiHost<int, int>
+    public class IdentityRoleMultiHostInt : IdentityRoleMultiHost<int, IdentityUserRoleMultiHostInt>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityRoleMultiHostInt"/> class.
@@ -149,30 +143,30 @@ namespace HyperSlackers.MultiHost
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityRoleMultiHostInt"/> class.
         /// </summary>
-        /// <param name="name">The role name.</param>
+        /// <param name="name">The name.</param>
         public IdentityRoleMultiHostInt(string name)
             : base(name)
         {
-            Contract.Requires<ArgumentException>(!name.IsNullOrWhiteSpace());
+            Contract.Requires<ArgumentNullException>(!name.IsNullOrWhiteSpace(), "name");
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityRoleMultiHostInt"/> class.
         /// </summary>
-        /// <param name="name">The role name.</param>
-        /// <param name="hostId">The host id.</param>
+        /// <param name="name">The name.</param>
+        /// <param name="hostId">The host identifier.</param>
         public IdentityRoleMultiHostInt(string name, int hostId)
             : base(name, hostId)
         {
-            Contract.Requires<ArgumentException>(!name.IsNullOrWhiteSpace());
-            Contract.Requires<ArgumentNullException>(hostId > 0, "hostId");
+            Contract.Requires<ArgumentNullException>(!name.IsNullOrWhiteSpace(), "name");
+            Contract.Requires<ArgumentException>(hostId > 0);
         }
     }
 
     /// <summary>
     /// Multi-tenant <c>Role</c> having both key and host key as <c>long</c> types
     /// </summary>
-    public class IdentityRoleMultiHostLong : IdentityRoleMultiHost<long, long>
+    public class IdentityRoleMultiHostLong : IdentityRoleMultiHost<long, IdentityUserRoleMultiHostLong>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityRoleMultiHostLong"/> class.
@@ -184,23 +178,23 @@ namespace HyperSlackers.MultiHost
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityRoleMultiHostLong"/> class.
         /// </summary>
-        /// <param name="name">The role name.</param>
+        /// <param name="name">The name.</param>
         public IdentityRoleMultiHostLong(string name)
             : base(name)
         {
-            Contract.Requires<ArgumentException>(!name.IsNullOrWhiteSpace());
+            Contract.Requires<ArgumentNullException>(!name.IsNullOrWhiteSpace(), "name");
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityRoleMultiHostLong"/> class.
         /// </summary>
-        /// <param name="name">The role name.</param>
-        /// <param name="hostId">The host id.</param>
+        /// <param name="name">The name.</param>
+        /// <param name="hostId">The host identifier.</param>
         public IdentityRoleMultiHostLong(string name, long hostId)
             : base(name, hostId)
         {
-            Contract.Requires<ArgumentException>(!name.IsNullOrWhiteSpace());
-            Contract.Requires<ArgumentNullException>(hostId > 0, "hostId");
+            Contract.Requires<ArgumentNullException>(!name.IsNullOrWhiteSpace(), "name");
+            Contract.Requires<ArgumentException>(hostId > 0);
         }
     }
 }

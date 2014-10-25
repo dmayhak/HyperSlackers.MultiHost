@@ -191,7 +191,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AsyncHelper.cs" />
+    <Compile Include="ExtensionMethods\RoleManagerExtensions.cs" />
     <Compile Include="ExtensionMethods\StringExtensions.cs" />
+    <Compile Include="ExtensionMethods\UserManagerExtensions.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="IdentityDbContextMultiHost.cs" />
     <Compile Include="IdentityRoleMultiHost.cs" />
@@ -199,10 +202,15 @@
     <Compile Include="IdentityUserLoginMultiHost.cs" />
     <Compile Include="IdentityUserMultiHost.cs" />
     <Compile Include="IdentityUserRoleMultiHost.cs" />
+    <Compile Include="IUserClaimMultiHost.cs" />
+    <Compile Include="IUserLoginMultiHost.cs" />
+    <Compile Include="IUserRoleMultiHost.cs" />
+    <Compile Include="IRoleMultiHost.cs" />
     <Compile Include="IUserMultiHost.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RoleManagerMultiHost.cs" />
     <Compile Include="RoleStoreMultiHost.cs" />
+    <Compile Include="RoleValidatorMultiHost.cs" />
     <Compile Include="UserManagerMultiHost.cs" />
     <Compile Include="UserStoreMultiHost.cs" />
   </ItemGroup>

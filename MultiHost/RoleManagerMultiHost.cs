@@ -10,6 +10,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Data.Entity;
 using HyperSlackers.MultiHost.Extensions;
 
 namespace HyperSlackers.MultiHost
@@ -17,87 +18,202 @@ namespace HyperSlackers.MultiHost
     /// <summary>
     /// Exposes role related API for a multi-tenant <c>DbContext</c> which will automatically save changes to the <c>RoleStore</c>.
     /// </summary>
+    /// <typeparam name="TRole">A role type derived from <c>IdentityRoleMultiHost{TKey}</c>.</typeparam>
     /// <typeparam name="TKey">The key type. (Typically <c>string</c>, <c>Guid</c>, <c>int</c>, or <c>long</c>.)</typeparam>
-    /// <typeparam name="THostKey">The host id key type. (Typically <c>string</c>, <c>Guid</c>, <c>int</c>, or <c>long</c>.)</typeparam>
-    /// <typeparam name="TRole">A role type derived from <c>IdentityRoleMultiHost{TKey, THostKey}</c>.</typeparam>
-    public class RoleManagerMultiHost<TKey, THostKey, TRole> : RoleManager<TRole, TKey>
+    /// <typeparam name="TUserRole">The type of the user role.</typeparam>
+    public class RoleManagerMultiHost<TRole, TKey, TUserRole> : RoleManager<TRole, TKey>
         where TKey : IEquatable<TKey>
-        where THostKey : IEquatable<THostKey>
-        where TRole : IdentityRoleMultiHost<TKey, THostKey>, new()
+        where TRole :IdentityRoleMultiHost<TKey, TUserRole>, Microsoft.AspNet.Identity.IRole<TKey>, IRoleMultiHost<TKey>, new()
+        where TUserRole : IdentityUserRoleMultiHost<TKey>, IUserRoleMultiHost<TKey>, new()
     {
-        /// <summary>
-        /// Gets or sets the host id.
-        /// </summary>
-        /// <value>
-        /// The host id.
-        /// </value>
-        public virtual THostKey HostId { get; set; }
+        public TKey HostId { get; private set; }
+        public TKey SystemHostId { get; private set; }
+        protected DbContext Context { get; private set; }
         private bool disposed = false;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="RoleManagerMultiHost{TKey, THostKey, TRole}"/> class.
+        /// Initializes a new instance of the <see cref="RoleManagerMultiHost{TKey, TRole}"/> class.
         /// </summary>
         /// <param name="store">The <c>RoleStore</c>.</param>
-        public RoleManagerMultiHost(RoleStoreMultiHost<TKey, THostKey, TRole> store)
+        public RoleManagerMultiHost(RoleStoreMultiHost<TRole, TKey, TUserRole> store)
             : base(store)
         {
             Contract.Requires<ArgumentNullException>(store != null, "store");
+
+            // new role validator to allow duplicate names--just not for same host
+            this.RoleValidator = new RoleValidatorMultiHost<TRole, TKey, TUserRole>(this);
+
+            this.Context = store.Context;
+            this.HostId = store.HostId;
+            this.SystemHostId = store.SystemHostId;
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="RoleManagerMultiHost{TKey, THostKey, TRole}"/> class.
+        /// Creates a role for the current host
         /// </summary>
-        /// <param name="store">The <c>RoleStore</c>.</param>
-        /// <param name="hostId">The default host id to use when host id not specified.</param>
-        public RoleManagerMultiHost(RoleStoreMultiHost<TKey, THostKey, TRole> store, THostKey hostId)
-            : base(store)
+        /// <param name="roleName">Name of the role.</param>
+        /// <returns></returns>
+        /// <exception cref="System.ArgumentException">Global roles must belong to system host.</exception>
+        public async Task<IdentityResult> CreateAsync(string roleName, bool global = false)
         {
-            Contract.Requires<ArgumentNullException>(store != null, "store");
-            Contract.Requires<ArgumentNullException>(!EqualityComparer<THostKey>.Default.Equals(hostId, default(THostKey)), "hostId");
+            //x Contract.Requires<ArgumentNullException>(role != null, "role");
 
-            this.HostId = hostId;
+            ThrowIfDisposed();
+
+            if (global)
+            {
+                return await CreateAsync(this.SystemHostId, roleName, global);
+            }
+            else
+            {
+                return await CreateAsync(this.HostId, roleName, global);
+            }
         }
 
         /// <summary>
-        /// Checks if a role exists for the default host.
+        /// Creates a role for the current host
+        /// </summary>
+        /// <param name="roleName">Name of the role.</param>
+        /// <returns></returns>
+        /// <exception cref="System.ArgumentException">Global roles must belong to system host.</exception>
+        public async Task<IdentityResult> CreateAsync(TKey hostId, string roleName, bool global = false)
+        {
+            Contract.Requires<ArgumentNullException>(hostId.Equals(default(TKey)), "hostId");
+            Contract.Requires<ArgumentNullException>(!roleName.IsNullOrWhiteSpace(), "roleName");
+
+            ThrowIfDisposed();
+
+            var role = new TRole()
+            {
+                HostId = hostId,
+                Name = roleName,
+                IsGlobal = global
+            };
+
+            return await CreateAsync(role);
+        }
+
+        /// <summary>
+        /// Creates a role for the host specified in <c>role.HostId</c> or the current host if unspecified.
+        /// </summary>
+        /// <param name="role">The role.</param>
+        /// <returns></returns>
+        /// <exception cref="System.ArgumentException">Global roles must belong to system host.</exception>
+        public override async Task<IdentityResult> CreateAsync(TRole role)
+        {
+            //x Contract.Requires<ArgumentNullException>(role != null, "role");
+
+            ThrowIfDisposed();
+
+            if (role.HostId.Equals(default(TKey)))
+            {
+                role.HostId = this.HostId;
+            }
+
+            if (role.IsGlobal && !role.HostId.Equals(this.SystemHostId))
+            {
+                throw new ArgumentException("Global roles must belong to system host.");
+            }
+
+            return await base.CreateAsync(role);
+        }
+
+        /// <summary>
+        /// Find a role by name for the current host or global role.
+        /// </summary>
+        /// <param name="roleName">Name of the role.</param>
+        /// <returns></returns>
+        public override async Task<TRole> FindByNameAsync(string roleName)
+        {
+            //x Contract.Requires<ArgumentNullException>(!roleName.IsNullOrWhiteSpace(), "roleName");
+
+            ThrowIfDisposed();
+
+            return await FindByNameAsync(this.HostId, roleName);
+        }
+
+        /// <summary>
+        ///  Find a role by name. Searches in the specified host, then global roles.
+        /// </summary>
+        /// <param name="hostId">The host identifier.</param>
+        /// <param name="roleName">Name of the role.</param>
+        /// <returns></returns>
+        public async Task<TRole> FindByNameAsync(TKey hostId, string roleName)
+        {
+            Contract.Requires<ArgumentNullException>(hostId.Equals(default(TKey)), "hostId");
+            Contract.Requires<ArgumentNullException>(!roleName.IsNullOrWhiteSpace(), "roleName");
+
+            ThrowIfDisposed();
+
+            return await Task.FromResult(Roles.SingleOrDefault(r => r.Name == roleName && (r.HostId.Equals(hostId) || r.IsGlobal == true)));
+        }
+
+        /// <summary>
+        /// Checks if a role exists for the default host or in global roles.
         /// </summary>
         /// <param name="roleName">Name of the role.</param>
         /// <returns><c>true</c> if role exists, otherwise, <c>false</c></returns>
         public override async Task<bool> RoleExistsAsync(string roleName)
         {
-            //x Contract.Requires<ArgumentException>(!roleName.IsNullOrWhiteSpace());
+            //x Contract.Requires<ArgumentNullException>(!roleName.IsNullOrWhiteSpace(), "roleName");
 
-            return await Task.FromResult(RoleExists(roleName, this.HostId));
+            ThrowIfDisposed();
+
+            return await RoleExistsAsync(this.HostId, roleName);
         }
 
         /// <summary>
-        /// Checks if a role exists for the specified host.
+        /// Checks if a role exists for the specified host or in global roles.
         /// </summary>
         /// <param name="roleName">Name of the role.</param>
         /// <param name="hostId">The host id.</param>
         /// <returns>
         ///   <c>true</c> if role exists, otherwise, <c>false</c>
         /// </returns>
-        public bool RoleExists(string roleName, THostKey hostId)
+        public async Task<bool> RoleExistsAsync(TKey hostId, string roleName)
         {
-            Contract.Requires<ArgumentException>(!roleName.IsNullOrWhiteSpace());
-            Contract.Requires<ArgumentNullException>(!EqualityComparer<THostKey>.Default.Equals(hostId, default(THostKey)), "hostId");
+            Contract.Requires<ArgumentNullException>(!hostId.Equals(default(TKey)), "hostId");
+            Contract.Requires<ArgumentNullException>(!roleName.IsNullOrWhiteSpace(), "roleName");
 
-            return Roles.Any(r => r.Name == roleName && r.HostId.Equals(hostId));
+            ThrowIfDisposed();
+
+            return await Task.FromResult(Roles.Any(r => r.Name == roleName && (r.HostId.Equals(hostId) || r.IsGlobal == true)));
         }
 
         /// <summary>
-        /// Creates a role for the host specified in <c>role.HostId</c>. If host id not specified, the default host is used.
+        /// Update an existing role.
         /// </summary>
-        /// <param name="user">The user.</param>
-        public override Task<IdentityResult> CreateAsync(TRole role)
+        /// <param name="role">The role.</param>
+        /// <returns></returns>
+        /// <exception cref="System.ArgumentException">Roles cannot be assigned a new hostId.</exception>
+        /// <exception cref="System.ArgumentException">Global roles must belong to system host.</exception>
+        public override async Task<IdentityResult> UpdateAsync(TRole role)
         {
-            if (EqualityComparer<THostKey>.Default.Equals(role.HostId, default(THostKey)))
+            //x Contract.Requires<ArgumentNullException>(role != null, "role");
+
+            ThrowIfDisposed();
+
+            var existing = await FindByIdAsync(role.Id);
+
+            if (!role.HostId.Equals(existing.HostId))
             {
-                role.HostId = this.HostId;
+                throw new ArgumentException("Roles cannot be assigned a new hostId.");
             }
 
-            return base.CreateAsync(role);
+            if (role.IsGlobal && !role.HostId.Equals(this.SystemHostId))
+            {
+                throw new ArgumentException("Global roles must belong to system host.");
+            }
+
+            return await base.UpdateAsync(role);
+        }
+
+        private void ThrowIfDisposed()
+        {
+            if (this.disposed)
+            {
+                throw new ObjectDisposedException(GetType().Name);
+            }
         }
 
         protected override void Dispose(bool disposing)
@@ -107,6 +223,7 @@ namespace HyperSlackers.MultiHost
                 if (disposing)
                 {
                     // TODO: cache references? if so, release them here
+                    this.Context = null;
 
                     this.disposed = true;
                 }
@@ -119,7 +236,7 @@ namespace HyperSlackers.MultiHost
     /// <summary>
     /// Exposes role related API for a multi-tenant <c>DbContext</c> having key and host key as <c>string</c> data types.
     /// </summary>
-    public class RoleManagerMultiHostString : RoleManagerMultiHost<string, string, IdentityRoleMultiHost<string, string>>
+    public class RoleManagerMultiHostString : RoleManagerMultiHost<IdentityRoleMultiHostString, string, IdentityUserRoleMultiHostString>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="RoleManagerMultiHostString" /> class.
@@ -130,24 +247,12 @@ namespace HyperSlackers.MultiHost
         {
             Contract.Requires<ArgumentNullException>(store != null, "store");
         }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="RoleManagerMultiHostString"/> class.
-        /// </summary>
-        /// <param name="store">The <c>RoleStore</c>.</param>
-        /// <param name="hostId">The host id.</param>
-        public RoleManagerMultiHostString(RoleStoreMultiHostString store, string hostId)
-            : base(store, hostId)
-        {
-            Contract.Requires<ArgumentNullException>(store != null, "store");
-            Contract.Requires<ArgumentException>(!hostId.IsNullOrWhiteSpace());
-        }
     }
 
     /// <summary>
     /// Exposes role related API for a multi-tenant <c>DbContext</c> having key and host key as <c>Guid</c> data types.
     /// </summary>
-    public class RoleManagerMultiHostGuid : RoleManagerMultiHost<Guid, Guid, IdentityRoleMultiHost<Guid, Guid>>
+    public class RoleManagerMultiHostGuid : RoleManagerMultiHost<IdentityRoleMultiHostGuid, Guid, IdentityUserRoleMultiHostGuid>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="RoleManagerMultiHostGuid" /> class.
@@ -158,24 +263,12 @@ namespace HyperSlackers.MultiHost
         {
             Contract.Requires<ArgumentNullException>(store != null, "store");
         }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="RoleManagerMultiHostGuid"/> class.
-        /// </summary>
-        /// <param name="store">The <c>RoleStore</c>.</param>
-        /// <param name="hostId">The host id.</param>
-        public RoleManagerMultiHostGuid(RoleStoreMultiHostGuid store, Guid hostId)
-            : base(store, hostId)
-        {
-            Contract.Requires<ArgumentNullException>(store != null, "store");
-            Contract.Requires<ArgumentNullException>(hostId != Guid.Empty, "hostId");
-        }
     }
 
     /// <summary>
     /// Exposes role related API for a multi-tenant <c>DbContext</c> having key and host key as <c>int</c> data types.
     /// </summary>
-    public class RoleManagerMultiHostInt : RoleManagerMultiHost<int, int, IdentityRoleMultiHost<int, int>>
+    public class RoleManagerMultiHostInt : RoleManagerMultiHost<IdentityRoleMultiHostInt, int, IdentityUserRoleMultiHostInt>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="RoleManagerMultiHostInt" /> class.
@@ -186,24 +279,12 @@ namespace HyperSlackers.MultiHost
         {
             Contract.Requires<ArgumentNullException>(store != null, "store");
         }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="RoleManagerMultiHostInt"/> class.
-        /// </summary>
-        /// <param name="store">The <c>RoleStore</c>.</param>
-        /// <param name="hostId">The host id.</param>
-        public RoleManagerMultiHostInt(RoleStoreMultiHostInt store, int hostId)
-            : base(store, hostId)
-        {
-            Contract.Requires<ArgumentNullException>(store != null, "store");
-            Contract.Requires<ArgumentException>(hostId > 0, "hostId");
-        }
     }
 
     /// <summary>
     /// Exposes role related API for a multi-tenant <c>DbContext</c> having key and host key as <c>long</c> data types.
     /// </summary>
-    public class RoleManagerMultiHostLong : RoleManagerMultiHost<long, long, IdentityRoleMultiHost<long, long>>
+    public class RoleManagerMultiHostLong : RoleManagerMultiHost<IdentityRoleMultiHostLong, long, IdentityUserRoleMultiHostLong>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="RoleManagerMultiHostLong" /> class.
@@ -213,18 +294,6 @@ namespace HyperSlackers.MultiHost
             : base(store)
         {
             Contract.Requires<ArgumentNullException>(store != null, "store");
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="RoleManagerMultiHostLong"/> class.
-        /// </summary>
-        /// <param name="store">The <c>RoleStore</c>.</param>
-        /// <param name="hostId">The host id.</param>
-        public RoleManagerMultiHostLong(RoleStoreMultiHostLong store, long hostId)
-            : base(store, hostId)
-        {
-            Contract.Requires<ArgumentNullException>(store != null, "store");
-            Contract.Requires<ArgumentException>(hostId > 0, "hostId");
         }
     }
 }

@@ -18,33 +18,32 @@ namespace HyperSlackers.MultiHost
     /// EntityFramework <c>IdentityUser</c> implementation for a multi-tenant <c>DbContext</c>.
     /// </summary>
     /// <typeparam name="TKey">The key type. (Typically <c>string</c>, <c>Guid</c>, <c>int</c>, or <c>long</c>.)</typeparam>
-    /// <typeparam name="THostKey">The host id key type. (Typically <c>string</c>, <c>Guid</c>, <c>int</c>, or <c>long</c>.)</typeparam>
-    public class IdentityUserMultiHost<TKey, THostKey> : IdentityUser<TKey, IdentityUserLoginMultiHost<TKey, THostKey>, IdentityUserRoleMultiHost<TKey>, IdentityUserClaimMultiHost<TKey>>, IUserMultiHost<TKey, THostKey>
+    /// <typeparam name="TLogin">The type of the login.</typeparam>
+    /// <typeparam name="TRole">The type of the role.</typeparam>
+    /// <typeparam name="TClaim">The type of the claim.</typeparam>
+    public class IdentityUserMultiHost<TKey, TLogin, TRole, TClaim> : IdentityUser<TKey, TLogin, TRole, TClaim>, IUserMultiHost<TKey>
         where TKey : IEquatable<TKey>
-        where THostKey : IEquatable<THostKey>
+        where TLogin : Microsoft.AspNet.Identity.EntityFramework.IdentityUserLogin<TKey>, IUserLoginMultiHost<TKey>, new()
+        where TRole : Microsoft.AspNet.Identity.EntityFramework.IdentityUserRole<TKey>, IUserRoleMultiHost<TKey>, new()
+        where TClaim : Microsoft.AspNet.Identity.EntityFramework.IdentityUserClaim<TKey>, IUserClaimMultiHost<TKey>, new()
     {
-        /// <summary>
-        /// Gets or sets the host id.
-        /// </summary>
-        /// <value>
-        /// The host id.
-        /// </value>
-        public THostKey HostId { get; set; }
+        public TKey HostId { get; set; }
+        public bool IsGlobal { get; set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="IdentityUserMultiHost{TKey, THostKey}"/> class.
+        /// Initializes a new instance of the <see cref="IdentityUserMultiHost{TKey}"/> class.
         /// </summary>
         public IdentityUserMultiHost()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="IdentityUserMultiHost{TKey, THostKey}"/> class.
+        /// Initializes a new instance of the <see cref="IdentityUserMultiHost{TKey}"/> class.
         /// </summary>
         /// <param name="userName">The userName.</param>
         public IdentityUserMultiHost(string userName)
         {
-            Contract.Requires<ArgumentException>(!userName.IsNullOrWhiteSpace());
+            Contract.Requires<ArgumentNullException>(!userName.IsNullOrWhiteSpace(), "userName");
 
             UserName = userName;
         }
@@ -53,7 +52,7 @@ namespace HyperSlackers.MultiHost
     /// <summary>
     /// EntityFramework <c>IdentityUser</c> implementation for a multi-tenant <c>DbContext</c> having a <c>string</c> key type.
     /// </summary>
-    public class IdentityUserMultiHostString : IdentityUserMultiHost<string, string>
+    public class IdentityUserMultiHostString : IdentityUserMultiHost<string, IdentityUserLoginMultiHostString, IdentityUserRoleMultiHostString, IdentityUserClaimMultiHostString>, IUserMultiHostString
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityUserMultiHostString"/> class.
@@ -66,17 +65,17 @@ namespace HyperSlackers.MultiHost
         /// Initializes a new instance of the <see cref="IdentityUserMultiHostString"/> class.
         /// </summary>
         /// <param name="userName">The userName.</param>
-        public IdentityUserMultiHostString(string userName) 
+        public IdentityUserMultiHostString(string userName)
             : base(userName)
         {
-            Contract.Requires<ArgumentException>(!userName.IsNullOrWhiteSpace());
+            Contract.Requires<ArgumentNullException>(!userName.IsNullOrWhiteSpace(), "userName");
         }
     }
 
     /// <summary>
     /// EntityFramework <c>IdentityUser</c> implementation for a multi-tenant <c>DbContext</c> having a <c>Guid</c> key type.
     /// </summary>
-    public class IdentityUserMultiHostGuid : IdentityUserMultiHost<Guid, Guid>
+    public class IdentityUserMultiHostGuid : IdentityUserMultiHost<Guid, IdentityUserLoginMultiHostGuid, IdentityUserRoleMultiHostGuid, IdentityUserClaimMultiHostGuid>, IUserMultiHostGuid
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityUserMultiHostGuid"/> class.
@@ -92,14 +91,14 @@ namespace HyperSlackers.MultiHost
         public IdentityUserMultiHostGuid(string userName)
             : base(userName)
         {
-            Contract.Requires<ArgumentException>(!userName.IsNullOrWhiteSpace());
+            Contract.Requires<ArgumentNullException>(!userName.IsNullOrWhiteSpace(), "userName");
         }
     }
 
     /// <summary>
     /// EntityFramework <c>IdentityUser</c> implementation for a multi-tenant <c>DbContext</c> having a <c>int</c> key type.
     /// </summary>
-    public class IdentityUserMultiHostInt : IdentityUserMultiHost<int, int>
+    public class IdentityUserMultiHostInt : IdentityUserMultiHost<int, IdentityUserLoginMultiHostInt, IdentityUserRoleMultiHostInt, IdentityUserClaimMultiHostInt>, IUserMultiHostInt
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityUserMultiHostInt"/> class.
@@ -115,14 +114,14 @@ namespace HyperSlackers.MultiHost
         public IdentityUserMultiHostInt(string userName)
             : base(userName)
         {
-            Contract.Requires<ArgumentException>(!userName.IsNullOrWhiteSpace());
+            Contract.Requires<ArgumentNullException>(!userName.IsNullOrWhiteSpace(), "userName");
         }
     }
 
     /// <summary>
     /// EntityFramework <c>IdentityUser</c> implementation for a multi-tenant <c>DbContext</c> having a <c>long</c> key type.
     /// </summary>
-    public class IdentityUserMultiHostLong : IdentityUserMultiHost<long, long>
+    public class IdentityUserMultiHostLong : IdentityUserMultiHost<long, IdentityUserLoginMultiHostLong, IdentityUserRoleMultiHostLong, IdentityUserClaimMultiHostLong>, IUserMultiHostLong
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityUserMultiHostLong"/> class.
@@ -138,7 +137,7 @@ namespace HyperSlackers.MultiHost
         public IdentityUserMultiHostLong(string userName)
             : base(userName)
         {
-            Contract.Requires<ArgumentException>(!userName.IsNullOrWhiteSpace());
+            Contract.Requires<ArgumentNullException>(!userName.IsNullOrWhiteSpace(), "userName");
         }
     }
 }

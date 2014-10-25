@@ -13,42 +13,42 @@ using System.Threading.Tasks;
 namespace HyperSlackers.MultiHost
 {
     /// <summary>
-    /// Minimal interface for a user with id and username for a multi-tenant <c>DbContext</c>.
+    /// Minimal interface for a user in a multi-tenant <c>DbContext</c>.
     /// </summary>
     /// <typeparam name="TKey">The key type. (Typically <c>string</c>, <c>Guid</c>, <c>int</c>, or <c>long</c>.)</typeparam>
-    /// <typeparam name="THostKey">The host id key type. (Typically <c>string</c>, <c>Guid</c>, <c>int</c>, or <c>long</c>.)</typeparam>
-    public interface IUserMultiHost<out TKey, THostKey> : IUser<TKey>
+    /// <typeparam name="TKey">The host id key type. (Typically <c>string</c>, <c>Guid</c>, <c>int</c>, or <c>long</c>.)</typeparam>
+    public interface IUserMultiHost<TKey> : IUser<TKey>
         where TKey : IEquatable<TKey>
-        where THostKey : IEquatable<THostKey>
     {
-        THostKey HostId { get; set; }
+        TKey HostId { get; set; }
+        bool IsGlobal { get; set; }
     }
 
     /// <summary>
-    /// Minimal interface for a user with id and username for a multi-tenant <c>DbContext</c> having key and host key types of <c>string</c>.
+    /// Minimal interface for a user in a multi-tenant <c>DbContext</c> having key types of <c>string</c>.
     /// </summary>
-    public interface IUserMultiHostString : IUserMultiHost<string, string>
-    {
-    }
-
-    /// <summary>
-    /// Minimal interface for a user with id and username for a multi-tenant <c>DbContext</c> having key and host key types of <c>Guid</c>.
-    /// </summary>
-    public interface IUserMultiHostGuid : IUserMultiHost<Guid, Guid>
+    public interface IUserMultiHostString : IUserMultiHost<string>
     {
     }
 
     /// <summary>
-    /// Minimal interface for a user with id and username for a multi-tenant <c>DbContext</c> having key and host key types of <c>int</c>.
+    /// Minimal interface for a user in a multi-tenant <c>DbContext</c> having key types of <c>Guid</c>.
     /// </summary>
-    public interface IUserMultiHostInt : IUserMultiHost<int, int>
+    public interface IUserMultiHostGuid : IUserMultiHost<Guid>
     {
     }
 
     /// <summary>
-    /// Minimal interface for a user with id and username for a multi-tenant <c>DbContext</c> having key and host key types of <c>long</c>.
+    /// Minimal interface for a user in a multi-tenant <c>DbContext</c> having key types of <c>int</c>.
     /// </summary>
-    public interface IUserMultiHostLong : IUserMultiHost<long, long>
+    public interface IUserMultiHostInt : IUserMultiHost<int>
+    {
+    }
+
+    /// <summary>
+    /// Minimal interface for a user in a multi-tenant <c>DbContext</c> having key types of <c>long</c>.
+    /// </summary>
+    public interface IUserMultiHostLong : IUserMultiHost<long>
     {
     }
 }

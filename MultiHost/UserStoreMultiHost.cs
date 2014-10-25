@@ -11,78 +11,54 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using HyperSlackers.MultiHost.Extensions;
 using Microsoft.AspNet.Identity;
+using System.Security.Claims;
+using HyperSlackers.MultiHost.Extensions;
 
 namespace HyperSlackers.MultiHost
 {
     /// <summary>
     /// EntityFramework <c>UserStore</c> implementation for a multi-tenant <c>DbContext</c>.
     /// </summary>
-    /// <typeparam name="TUser">A user type derived from <c>IdentityUserMultiHost{TKey, THostKey}</c>.</typeparam>
+    /// <typeparam name="TUser">A user type derived from <c>IdentityUserMultiHost{TKey}</c>.</typeparam>
+    /// <typeparam name="TRole">The type of the role.</typeparam>
     /// <typeparam name="TKey">The key type. (Typically <c>string</c>, <c>Guid</c>, <c>int</c>, or <c>long</c>.)</typeparam>
-    /// <typeparam name="THostKey">The host id key type. (Typically <c>string</c>, <c>Guid</c>, <c>int</c>, or <c>long</c>.)</typeparam>
-    public class UserStoreMultiHost<TUser, TKey, THostKey> : UserStore<TUser, IdentityRoleMultiHost<TKey, THostKey>, TKey, IdentityUserLoginMultiHost<TKey, THostKey>, IdentityUserRoleMultiHost<TKey>, IdentityUserClaimMultiHost<TKey>>
-        where TUser : IdentityUserMultiHost<TKey, THostKey>, new()
+    /// <typeparam name="TUserLogin">The type of the user login.</typeparam>
+    /// <typeparam name="TUserRole">The type of the user role.</typeparam>
+    /// <typeparam name="TUserClaim">The type of the user claim.</typeparam>
+    public class UserStoreMultiHost<TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim> : UserStore<TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim>
+        where TUser : IdentityUserMultiHost<TKey, TUserLogin, TUserRole, TUserClaim>, IUserMultiHost<TKey>, new()
+        where TRole : IdentityRoleMultiHost<TKey, TUserRole>, IRoleMultiHost<TKey>, new()
         where TKey : IEquatable<TKey>
-        where THostKey : IEquatable<THostKey>
+        where TUserLogin : IdentityUserLoginMultiHost<TKey>, IUserLoginMultiHost<TKey>, new()
+        where TUserRole : IdentityUserRoleMultiHost<TKey>, IUserRoleMultiHost<TKey>, new()
+        where TUserClaim : IdentityUserClaimMultiHost<TKey>, IUserClaimMultiHost<TKey>, new()
     {
-        /// <summary>
-        /// Gets or sets the host id.
-        /// </summary>
-        /// <value>
-        /// The host id.
-        /// </value>
-        public THostKey HostId { get; set; }
+        public TKey HostId { get; private set; }
+        public TKey SystemHostId { get; private set; }
+        protected UserManagerMultiHost<TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim> UserManager { get; private set; }
         private bool disposed = false;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="UserStoreMultiHost{TUser, TKey, THostKey}"/> class.
-        /// </summary>
-        /// <param name="context">The <c>DbContext</c>.</param>
-        public UserStoreMultiHost(DbContext context)
-            : base(context)
-        {
-            Contract.Requires<ArgumentNullException>(context != null, "context");
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="UserStoreMultiHost{TUser, TKey, THostKey}"/> class.
+        /// Initializes a new instance of the <see cref="UserStoreMultiHost{TUser, TKey}"/> class.
         /// </summary>
         /// <param name="context">The <c>DbContext</c>.</param>
         /// <param name="hostId">The default host id.</param>
-        public UserStoreMultiHost(DbContext context, THostKey hostId)
+        public UserStoreMultiHost(DbContext context, TKey hostId, TKey systemHostId)
             : base(context)
         {
             Contract.Requires<ArgumentNullException>(context != null, "context");
-            Contract.Requires<ArgumentNullException>(!EqualityComparer<THostKey>.Default.Equals(hostId, default(THostKey)), "hostId is invalid.");
+            Contract.Requires<ArgumentNullException>(!hostId.Equals(default(TKey)), "hostId");
+            Contract.Requires<ArgumentNullException>(!systemHostId.Equals(default(TKey)), "systemHostId");
 
             this.HostId = hostId;
+            this.SystemHostId = systemHostId;
+            this.UserManager = CreateUserManager();
         }
 
-        /// <summary>
-        /// Adds a <c>UserLogin</c> to an existing user.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <param name="login">The login info.</param>
-        /// <returns></returns>
-        public override Task AddLoginAsync(TUser user, UserLoginInfo login)
+        protected virtual UserManagerMultiHost<TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim> CreateUserManager()
         {
-            Contract.Requires<ArgumentNullException>(user != null, "user");
-            Contract.Requires<ArgumentNullException>(login != null, "login");
-            Contract.Requires<ArgumentNullException>(!EqualityComparer<THostKey>.Default.Equals(user.HostId, default(THostKey)), "User.HostId");
-
-            var userLogin = new IdentityUserLoginMultiHost<TKey, THostKey>
-            {
-                HostId = user.HostId,
-                UserId = user.Id,
-                ProviderKey = login.ProviderKey,
-                LoginProvider = login.LoginProvider,
-            };
-
-            user.Logins.Add(userLogin);
-
-            return Task.FromResult(0);
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -90,22 +66,28 @@ namespace HyperSlackers.MultiHost
         /// </summary>
         /// <param name="user">The user.</param>
         /// <returns></returns>
+        /// <exception cref="System.ArgumentException">Global users must belong to system host.</exception>
         public override async Task CreateAsync(TUser user)
         {
             Contract.Requires<ArgumentNullException>(user != null, "user");
 
-            if (EqualityComparer<THostKey>.Default.Equals(user.HostId, default(THostKey)))
+            ThrowIfDisposed();
+
+            if (user.HostId.Equals(default(TKey)))
             {
-                // if host id not specified on user, assign current one
-                // TODO: what about site-wide users (hostId = Guid.Empty for example)?
                 user.HostId = this.HostId;
             }
 
+            if (user.IsGlobal && !user.HostId.Equals(this.SystemHostId))
+            {
+                throw new ArgumentException("Global users must belong to system host.");
+            }
+            UserManager.Create(user);
             await base.CreateAsync(user);
         }
 
         /// <summary>
-        /// Finds a user for the default host.
+        /// Finds a user belonging to the default host or that is a global user.
         /// </summary>
         /// <param name="login">The user's login info.</param>
         /// <returns></returns>
@@ -113,95 +95,468 @@ namespace HyperSlackers.MultiHost
         {
             Contract.Requires<ArgumentNullException>(login != null, "login");
 
-            return await FindAsync(login, this.HostId);
+            ThrowIfDisposed();
+
+            return await FindAsync(this.HostId, login);
         }
 
         /// <summary>
-        /// Finds a user for the specified host.
+        /// Finds a user belonging to the specified host or that is a global user.
         /// </summary>
-        /// <param name="login">The user's login info.</param>
         /// <param name="hostId">The host id.</param>
+        /// <param name="login">The user's login info.</param>
         /// <returns></returns>
-        public async Task<TUser> FindAsync(UserLoginInfo login, THostKey hostId)
+        public async Task<TUser> FindAsync(TKey hostId, UserLoginInfo login)
         {
+            Contract.Requires<ArgumentNullException>(!hostId.Equals(default(TKey)), "hostId");
             Contract.Requires<ArgumentNullException>(login != null, "login");
-            Contract.Requires<ArgumentNullException>(!EqualityComparer<THostKey>.Default.Equals(hostId, default(THostKey)), "hostId");
 
-            TKey userId = FindUserId(login, hostId);
+            ThrowIfDisposed();
 
-            if (EqualityComparer<TKey>.Default.Equals(userId, default(TKey)))
+            var userId = await Context.Set<TUserLogin>()
+                .Where(l => l.LoginProvider == login.LoginProvider
+                    && l.ProviderKey == login.ProviderKey
+                    && (l.HostId.Equals(hostId) || l.IsGlobal))
+                .Select(l => l.UserId)
+                .SingleOrDefaultAsync();
+
+            if (!userId.Equals(default(TKey)))
             {
-                return null;
+                return await FindByIdAsync(userId);
             }
 
-            return await Context.Set<TUser>().FindAsync(userId).ConfigureAwait(false);
+            // user does not exist, user is not global, or user does not belong to this host
+            return null;
         }
 
         /// <summary>
-        /// Finds the user id for the given login info and host.
+        /// Add a claim to a user for the current host.
         /// </summary>
-        /// <param name="login">The user's login info.</param>
-        /// <param name="hostId">The host id.</param>
-        /// <returns>The user's id</returns>
-        /// <exception cref="System.NotImplementedException"></exception>
-        internal virtual TKey FindUserId(UserLoginInfo login, THostKey hostId)
+        /// <param name="user">The user.</param>
+        /// <param name="claim">The claim.</param>
+        /// <returns></returns>
+        public override async Task AddClaimAsync(TUser user, System.Security.Claims.Claim claim)
         {
-            Contract.Requires<ArgumentNullException>(login != null, "login");
-            Contract.Requires<ArgumentNullException>(!EqualityComparer<THostKey>.Default.Equals(hostId, default(THostKey)), "hostId");
+            Contract.Requires<ArgumentNullException>(user != null, "user");
+            Contract.Requires<ArgumentNullException>(claim != null, "claim");
 
-            throw new NotImplementedException();
+            ThrowIfDisposed();
+
+            await AddClaimAsync(this.HostId, user, claim);
         }
 
         /// <summary>
-        /// Finds a user for the default host with the given email address.
+        /// Add a claim to a user for the specified host.
+        /// </summary>
+        /// <param name="hostId">The host identifier.</param>
+        /// <param name="user">The user.</param>
+        /// <param name="claim">The claim.</param>
+        /// <returns></returns>
+        public async Task AddClaimAsync(TKey hostId, TUser user, System.Security.Claims.Claim claim)
+        {
+            Contract.Requires<ArgumentNullException>(!hostId.Equals(default(TKey)), "hostId");
+            Contract.Requires<ArgumentNullException>(user != null, "user");
+            Contract.Requires<ArgumentNullException>(claim != null, "claim");
+
+            ThrowIfDisposed();
+
+            var userClaim = new TUserClaim
+            {
+                HostId = hostId,
+                UserId = user.Id,
+                ClaimType = claim.Type,
+                ClaimValue = claim.Value,
+                IsGlobal = user.IsGlobal
+            };
+
+            await Task.Run(() => user.Claims.Add(userClaim));
+        }
+
+        /// <summary>
+        /// Add a login to the user for the current host. If user is global, login is as well.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <param name="login">The login.</param>
+        /// <returns></returns>
+        public override async Task AddLoginAsync(TUser user, UserLoginInfo login)
+        {
+            Contract.Requires<ArgumentNullException>(user != null, "user");
+            Contract.Requires<ArgumentNullException>(login != null, "login");
+
+            ThrowIfDisposed();
+
+            await AddLoginAsync(this.HostId, user, login);
+        }
+
+        /// <summary>
+        /// Add a login to the user for the specified host. If user is global, login is as well.
+        /// </summary>
+        /// <param name="hostId">The host identifier.</param>
+        /// <param name="user">The user.</param>
+        /// <param name="login">The login.</param>
+        /// <returns></returns>
+        public async Task AddLoginAsync(TKey hostId, TUser user, UserLoginInfo login)
+        {
+            Contract.Requires<ArgumentNullException>(!hostId.Equals(default(TKey)), "hostId");
+            Contract.Requires<ArgumentNullException>(user != null, "user");
+            Contract.Requires<ArgumentNullException>(login != null, "login");
+
+            ThrowIfDisposed();
+
+            var userLogin = new TUserLogin
+            {
+                HostId = hostId,
+                UserId = user.Id,
+                LoginProvider = login.LoginProvider,
+                ProviderKey = login.ProviderKey,
+                IsGlobal = user.IsGlobal
+            };
+
+            await Task.Run(() => user.Logins.Add(userLogin));
+        }
+
+        /// <summary>
+        /// Add a user to a role for the current host. Role must belong to current host or be a global role.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <param name="roleName">Name of the role.</param>
+        /// <returns></returns>
+        public override async Task AddToRoleAsync(TUser user, string roleName)
+        {
+            Contract.Requires<ArgumentNullException>(user != null, "user");
+            Contract.Requires<ArgumentNullException>(!roleName.IsNullOrWhiteSpace(), "roleName");
+
+            ThrowIfDisposed();
+
+            await AddToRoleAsync(user.HostId, user, roleName);
+        }
+
+        /// <summary>
+        /// Add a user to a role for the specified host. Role must belong to specified host or be a global role.
+        /// </summary>
+        /// <param name="hostId">The host identifier.</param>
+        /// <param name="user">The user.</param>
+        /// <param name="roleName">Name of the role.</param>
+        /// <returns></returns>
+        /// <exception cref="System.Exception"></exception>
+        public async Task AddToRoleAsync(TKey hostId, TUser user, string roleName)
+        {
+            Contract.Requires<ArgumentNullException>(!hostId.Equals(default(TKey)), "hostId");
+            Contract.Requires<ArgumentNullException>(user != null, "user");
+            Contract.Requires<ArgumentNullException>(!roleName.IsNullOrWhiteSpace(), "roleName");
+
+            ThrowIfDisposed();
+
+            var role = await Context.Set<TRole>()
+                .Where(r => r.Name == roleName
+                    && (r.HostId.Equals(hostId) || r.IsGlobal == true))
+                .SingleOrDefaultAsync();
+
+            if (role == null)
+            {
+                throw new Exception(string.Format("Role '{0}' not found for hostId '{1}' or in global roles.", roleName, hostId));
+            }
+
+            var userRole = new TUserRole
+            {
+                HostId = user.HostId,
+                UserId = user.Id,
+                RoleId = role.Id,
+                IsGlobal = role.IsGlobal
+            };
+
+            user.Roles.Add(userRole);
+        }
+
+        /// <summary>
+        /// Get a users's claims for current host or global.
+        /// </summary>
+        /// <param name="userId">The user identifier.</param>
+        /// <returns></returns>
+        public override async Task<IList<Claim>> GetClaimsAsync(TUser user)
+        {
+            Contract.Requires<ArgumentNullException>(user != null, "user");
+
+            ThrowIfDisposed();
+
+            return await GetClaimsAsync(this.HostId, user);
+        }
+
+        /// <summary>
+        /// Get a users's claims for specified host or global.
+        /// </summary>
+        /// <param name="userId">The user identifier.</param>
+        /// <returns></returns>
+        public async Task<IList<Claim>> GetClaimsAsync(TKey hostId, TUser user)
+        {
+            Contract.Requires<ArgumentNullException>(!hostId.Equals(default(TKey)), "hostId");
+            Contract.Requires<ArgumentNullException>(user != null, "user");
+
+            ThrowIfDisposed();
+
+            return await Context.Set<TUserClaim>()
+                .Where(uc => uc.UserId.Equals(user.Id)
+                    && (uc.HostId.Equals(hostId) || uc.IsGlobal))
+                .Select(uc => new Claim(uc.ClaimType, uc.ClaimValue))
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// Get the names of the roles a user is a member of for the current host; includes global roles.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <returns></returns>
+        public override async Task<IList<string>> GetRolesAsync(TUser user)
+        {
+            Contract.Requires<ArgumentNullException>(user != null, "user");
+
+            ThrowIfDisposed();
+
+            return await GetRolesAsync(this.HostId, user);
+        }
+
+        /// <summary>
+        /// Get the names of the roles a user is a member of for the specified host; includes global roles.
+        /// </summary>
+        /// <param name="hostId">The host identifier.</param>
+        /// <param name="user">The user.</param>
+        /// <returns></returns>
+        public async Task<IList<string>> GetRolesAsync(TKey hostId, TUser user)
+        {
+            Contract.Requires<ArgumentNullException>(!hostId.Equals(default(TKey)), "hostId");
+            Contract.Requires<ArgumentNullException>(user != null, "user");
+
+            ThrowIfDisposed();
+
+            var roleIds = user.Roles
+                .Where(r => r.HostId.Equals(hostId) || r.IsGlobal == true)
+                .Select(r => r.RoleId)
+                .ToArray();
+
+            return await Context.Set<TRole>()
+                .Where(r => roleIds.Contains(r.Id))
+                .Select(r => r.Name)
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// Finds a user for the current host (or global) with the given email address.
         /// </summary>
         /// <param name="email">The user's email address.</param>
         /// <returns></returns>
         public new async Task<TUser> FindByEmailAsync(string email)
         {
-            Contract.Requires<ArgumentException>(!email.IsNullOrWhiteSpace());
+            Contract.Requires<ArgumentNullException>(!email.IsNullOrWhiteSpace(), "email");
 
-            return await FindByEmailAsync(email, this.HostId);
+            ThrowIfDisposed();
+
+            return await FindByEmailAsync(this.HostId, email);
         }
 
         /// <summary>
         /// Finds a user for the given host with the given email address.
         /// </summary>
-        /// <param name="email">The user's email address.</param>
         /// <param name="hostId">The host id.</param>
+        /// <param name="email">The user's email address.</param>
         /// <returns></returns>
-        public virtual async Task<TUser> FindByEmailAsync(string email, THostKey hostId)
+        public virtual async Task<TUser> FindByEmailAsync(TKey hostId, string email)
         {
-            Contract.Requires<ArgumentException>(!email.IsNullOrWhiteSpace());
-            Contract.Requires<ArgumentException>(!EqualityComparer<THostKey>.Default.Equals(hostId, default(THostKey)));
+            Contract.Requires<ArgumentException>(!hostId.Equals(default(TKey)));
+            Contract.Requires<ArgumentNullException>(!email.IsNullOrWhiteSpace(), "email");
 
-            return await Users.SingleOrDefaultAsync(u => u.Email == email && u.HostId.Equals(hostId));
+            ThrowIfDisposed();
+
+            return await Users
+                .SingleOrDefaultAsync(u => u.Email == email 
+                    && (u.HostId.Equals(hostId) || u.IsGlobal));
         }
 
         /// <summary>
-        /// Finds a user for the default host with the specified userName.
+        /// Finds a user for the current host (or global) with the specified userName.
         /// </summary>
         /// <param name="userName">The userName.</param>
         /// <returns></returns>
         public override async Task<TUser> FindByNameAsync(string userName)
         {
-            Contract.Requires<ArgumentException>(!userName.IsNullOrWhiteSpace());
+            Contract.Requires<ArgumentNullException>(!userName.IsNullOrWhiteSpace(), "userName");
 
-            return await FindByNameAsync(userName, this.HostId);
+            ThrowIfDisposed();
+
+            return await FindByNameAsync(this.HostId, userName);
         }
 
         /// <summary>
         /// Finds a user for the given host with the specified userName.
         /// </summary>
-        /// <param name="userName">The userName.</param>
         /// <param name="hostId">The host id.</param>
+        /// <param name="userName">The userName.</param>
         /// <returns></returns>
-        public virtual async Task<TUser> FindByNameAsync(string userName, THostKey hostId)
+        public virtual async Task<TUser> FindByNameAsync(TKey hostId, string userName)
         {
-            Contract.Requires<ArgumentException>(!userName.IsNullOrWhiteSpace());
-            Contract.Requires<ArgumentException>(!EqualityComparer<THostKey>.Default.Equals(hostId, default(THostKey)), "hostId");
+            Contract.Requires<ArgumentException>(!hostId.Equals(default(TKey)), "hostId");
+            Contract.Requires<ArgumentNullException>(!userName.IsNullOrWhiteSpace(), "userName");
 
-            return await Users.SingleOrDefaultAsync(u => u.UserName == userName && u.HostId.Equals(hostId));
+            ThrowIfDisposed();
+
+            return await Users
+                .SingleOrDefaultAsync(u => u.UserName == userName
+                    && (u.HostId.Equals(hostId) || u.IsGlobal ==  true));
+        }
+
+        /// <summary>
+        /// Remove a user claim from the current host.
+        /// </summary>
+        /// <param name="userId">The user identifier.</param>
+        /// <param name="claim">The claim.</param>
+        /// <returns></returns>
+        public override async Task RemoveClaimAsync(TUser user, Claim claim)
+        {
+            Contract.Requires<ArgumentNullException>(user != null, "user");
+            Contract.Requires<ArgumentNullException>(claim != null, "claim");
+
+            ThrowIfDisposed();
+
+            await RemoveClaimAsync(this.HostId, user, claim);
+        }
+
+        /// <summary>
+        /// Remove a user claim from the specified host.
+        /// </summary>
+        /// <param name="hostId">The host identifier.</param>
+        /// <param name="userId">The user identifier.</param>
+        /// <param name="claim">The claim.</param>
+        /// <returns></returns>
+        public async Task RemoveClaimAsync(TKey hostId, TUser user, Claim claim)
+        {
+            Contract.Requires<ArgumentNullException>(user != null, "user");
+            Contract.Requires<ArgumentNullException>(claim != null, "claim");
+
+            ThrowIfDisposed();
+
+            var userClaim = user.Claims
+                .Where(c => c.HostId.Equals(hostId)
+                    && c.ClaimType == claim.Type
+                    && c.ClaimValue == claim.Value)
+                .SingleOrDefault();
+
+            if (userClaim != null)
+            {
+                user.Claims.Remove(userClaim);
+            }
+        }
+
+        /// <summary>
+        /// Remove a user from a role (current host or global).
+        /// </summary>
+        /// <param name="userId">The user identifier.</param>
+        /// <param name="role">The role.</param>
+        /// <returns></returns>
+        public override async Task RemoveFromRoleAsync(TUser user, string roleName)
+        {
+            Contract.Requires<ArgumentNullException>(user != null, "user");
+            Contract.Requires<ArgumentNullException>(!roleName.IsNullOrWhiteSpace(), "roleName");
+
+            ThrowIfDisposed();
+
+            await RemoveFromRoleAsync(this.HostId, user, roleName);
+        }
+
+        /// <summary>
+        /// Remove a user from a role (specified host or global).
+        /// </summary>
+        /// <param name="hostId">The host identifier.</param>
+        /// <param name="userId">The user identifier.</param>
+        /// <param name="roleName">Name of the role.</param>
+        /// <returns></returns>
+        public async Task RemoveFromRoleAsync(TKey hostId, TUser user, string roleName)
+        {
+            Contract.Requires<ArgumentNullException>(!hostId.Equals(default(TKey)), "hostId");
+            Contract.Requires<ArgumentNullException>(user != null, "user");
+            Contract.Requires<ArgumentNullException>(!roleName.IsNullOrWhiteSpace(), "roleName");
+
+            ThrowIfDisposed();
+
+            var role = await FindRoleAsync(this.HostId, roleName);
+
+            var userRole = user.Roles
+                .Where(r => r.RoleId.Equals(role.Id)
+                    && (r.HostId.Equals(hostId) || r.IsGlobal))
+                .SingleOrDefault();
+
+            if (userRole != null)
+            {
+                user.Roles.Remove(userRole);
+            }
+        }
+
+        /// <summary>
+        /// Updates a user.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <returns></returns>
+        /// <exception cref="System.ArgumentException">Users cannot be assigned a new hostId.
+        /// or
+        /// Global users must belong to system host.</exception>
+        public override async Task UpdateAsync(TUser user)
+        {
+            Contract.Requires<ArgumentNullException>(user != null, "user");
+
+            ThrowIfDisposed();
+
+            var existing = await FindByIdAsync(user.Id);
+
+            if (!user.HostId.Equals(existing.HostId))
+            {
+                throw new ArgumentException("Users cannot be assigned a new hostId.");
+            }
+
+            if (user.IsGlobal && !user.HostId.Equals(this.SystemHostId))
+            {
+                throw new ArgumentException("Global users must belong to system host.");
+            }
+
+            await base.UpdateAsync(user);
+        }
+
+        /// <summary>
+        /// Finds a role by name for the current host or in the global roles.
+        /// </summary>
+        /// <param name="roleName">Name of the role.</param>
+        /// <returns></returns>
+        protected virtual async Task<TRole> FindRoleAsync(string roleName)
+        {
+            Contract.Requires<ArgumentNullException>(!roleName.IsNullOrWhiteSpace(), "roleName");
+
+            ThrowIfDisposed();
+
+            return await FindRoleAsync(this.HostId, roleName);
+        }
+
+        /// <summary>
+        /// Finds a role by name for the specified host or in the global roles.
+        /// </summary>
+        /// <param name="hostId">The host identifier.</param>
+        /// <param name="roleName">The role.</param>
+        /// <returns></returns>
+        protected virtual async Task<TRole> FindRoleAsync(TKey hostId, string roleName)
+        {
+            Contract.Requires<ArgumentNullException>(!hostId.Equals(default(TKey)), "hostId");
+            Contract.Requires<ArgumentNullException>(!roleName.IsNullOrWhiteSpace(), "roleName");
+
+            ThrowIfDisposed();
+
+            return await Context.Set<TRole>()
+                .Where(r => r.Name == roleName
+                    && (r.HostId.Equals(hostId) || r.IsGlobal == true))
+                .SingleOrDefaultAsync();
+        }
+
+        private void ThrowIfDisposed()
+        {
+            if (this.disposed)
+            {
+                throw new ObjectDisposedException(GetType().Name);
+            }
         }
 
         protected override void Dispose(bool disposing)
@@ -211,6 +566,7 @@ namespace HyperSlackers.MultiHost
                 if (disposing)
                 {
                     // TODO: cache references? if so, release them here
+                    UserManager = null;
 
                     this.disposed = true;
                 }
@@ -223,204 +579,156 @@ namespace HyperSlackers.MultiHost
     /// <summary>
     /// EntityFramework <c>UserStore</c> implementation for a multi-tenant <c>DbContext</c> having key and host key of type <c>string</c>.
     /// </summary>
-    public class UserStoreMultiHostString : UserStoreMultiHost<IdentityUserMultiHost<string, string>, string, string>
+    public class UserStoreMultiHostString<TUser> : UserStoreMultiHost<TUser, IdentityRoleMultiHostString, string, IdentityUserLoginMultiHostString, IdentityUserRoleMultiHostString, IdentityUserClaimMultiHostString>
+        where TUser : IdentityUserMultiHostString, IUserMultiHostString, new()
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="UserStoreMultiHostString" /> class.
         /// </summary>
         /// <param name="context">The <c>DbContext</c>.</param>
-        public UserStoreMultiHostString(DbContext context)
-            : base(context)
+        /// <param name="hostId">The host id.</param>
+        /// <param name="systemHostId">The system host identifier.</param>
+        public UserStoreMultiHostString(DbContext context, string hostId, string systemHostId)
+            : base(context, hostId, systemHostId)
         {
             Contract.Requires<ArgumentNullException>(context != null, "context");
+            Contract.Requires<ArgumentNullException>(!hostId.IsNullOrWhiteSpace(), "hostId");
+            Contract.Requires<ArgumentNullException>(!systemHostId.IsNullOrWhiteSpace(), "systemHostId");
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="UserStoreMultiHostString"/> class.
+        /// Creates the user manager.
         /// </summary>
-        /// <param name="context">The <c>DbContext</c>.</param>
-        /// <param name="hostId">The host id.</param>
-        public UserStoreMultiHostString(DbContext context, string hostId)
-            : base(context, hostId)
+        /// <returns></returns>
+        protected override UserManagerMultiHost<TUser, IdentityRoleMultiHostString, string, IdentityUserLoginMultiHostString, IdentityUserRoleMultiHostString, IdentityUserClaimMultiHostString> CreateUserManager()
         {
-            Contract.Requires<ArgumentNullException>(context != null, "context");
-            Contract.Requires<ArgumentException>(!hostId.IsNullOrWhiteSpace()); // TODO: what about a "default" host
+            return new UserManagerMultiHostString<TUser>(this);
         }
 
         /// <summary>
         /// Gets a <c>UserManager</c>.
         /// </summary>
         /// <returns></returns>
-        public UserManagerMultiHostString GetUserManager()
+        public UserManagerMultiHostString<TUser> GetUserManager()
         {
-            return new UserManagerMultiHostString(this);
-        }
-
-        /// <summary>
-        /// Finds the user id for the given login info and host.
-        /// </summary>
-        /// <param name="login">The user's login info.</param>
-        /// <param name="hostId">The host id.</param>
-        /// <returns>
-        /// The user's id
-        /// </returns>
-        internal override string FindUserId(UserLoginInfo login, string hostId)
-        {
-            return Context.Set<IdentityUserLoginMultiHostString>().Where(l => l.LoginProvider == login.LoginProvider && l.ProviderKey == login.ProviderKey && l.HostId.Equals(hostId))
-                .Select(l => l.UserId)
-                .SingleOrDefault();
+            return (UserManagerMultiHostString<TUser>)UserManager;
         }
     }
 
     /// <summary>
     /// EntityFramework <c>UserStore</c> implementation for a multi-tenant <c>DbContext</c> having key and host key of type <c>Guid</c>.
     /// </summary>
-    public class UserStoreMultiHostGuid : UserStoreMultiHost<IdentityUserMultiHost<Guid, Guid>, Guid, Guid>
+    public class UserStoreMultiHostGuid<TUser> : UserStoreMultiHost<TUser, IdentityRoleMultiHostGuid, Guid, IdentityUserLoginMultiHostGuid, IdentityUserRoleMultiHostGuid, IdentityUserClaimMultiHostGuid>
+        where TUser : IdentityUserMultiHostGuid, IUserMultiHostGuid, new()
     {
-        public UserStoreMultiHostGuid(DbContext context)
-            : base(context)
-        {
-            Contract.Requires<ArgumentNullException>(context != null, "context");
-        }
-
         /// <summary>
-        /// Initializes a new instance of the <see cref="UserStoreMultiHostGuid"/> class.
+        /// Initializes a new instance of the <see cref="UserStoreMultiHostGuid" /> class.
         /// </summary>
         /// <param name="context">The <c>DbContext</c>.</param>
         /// <param name="hostId">The default host id.</param>
-        public UserStoreMultiHostGuid(DbContext context, Guid hostId)
-            : base(context, hostId)
+        /// <param name="systemHostId">The system host identifier.</param>
+        public UserStoreMultiHostGuid(DbContext context, Guid hostId, Guid systemHostId)
+            : base(context, hostId, systemHostId)
         {
             Contract.Requires<ArgumentNullException>(context != null, "context");
-            Contract.Requires<ArgumentNullException>(hostId != Guid.Empty, "hostId"); // TODO: what about a "default" host
+            Contract.Requires<ArgumentNullException>(hostId != Guid.Empty, "hostId");
+            Contract.Requires<ArgumentNullException>(systemHostId != Guid.Empty, "systemHostId");
+        }
+
+        /// <summary>
+        /// Creates the user manager.
+        /// </summary>
+        /// <returns></returns>
+        protected override UserManagerMultiHost<TUser, IdentityRoleMultiHostGuid, Guid, IdentityUserLoginMultiHostGuid, IdentityUserRoleMultiHostGuid, IdentityUserClaimMultiHostGuid> CreateUserManager()
+        {
+            return new UserManagerMultiHostGuid<TUser>(this);
         }
 
         /// <summary>
         /// Gets a <c>UserManager</c>.
         /// </summary>
         /// <returns></returns>
-        public UserManagerMultiHostGuid GetUserManager()
+        public UserManagerMultiHostGuid<TUser> GetUserManager()
         {
-            return new UserManagerMultiHostGuid(this);
-        }
-
-        /// <summary>
-        /// Finds the user id for the given login info and host.
-        /// </summary>
-        /// <param name="login">The user's login info.</param>
-        /// <param name="hostId">The default host id.</param>
-        /// <returns>
-        /// The user's id
-        /// </returns>
-        internal override Guid FindUserId(UserLoginInfo login, Guid hostId)
-        {
-            return Context.Set<IdentityUserLoginMultiHostGuid>().Where(l => l.LoginProvider == login.LoginProvider && l.ProviderKey == login.ProviderKey && l.HostId.Equals(hostId))
-                .Select(l => l.UserId)
-                .SingleOrDefault();
+            return (UserManagerMultiHostGuid<TUser>)UserManager;
         }
     }
 
     /// <summary>
     /// EntityFramework <c>UserStore</c> implementation for a multi-tenant <c>DbContext</c> having key and host key of type <c>int</c>.
     /// </summary>
-    public class UserStoreMultiHostInt : UserStoreMultiHost<IdentityUserMultiHost<int, int>, int, int>
+    public class UserStoreMultiHostInt<TUser> : UserStoreMultiHost<TUser, IdentityRoleMultiHostInt, int, IdentityUserLoginMultiHostInt, IdentityUserRoleMultiHostInt, IdentityUserClaimMultiHostInt>
+        where TUser : IdentityUserMultiHostInt, IUserMultiHostInt, new()
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="UserStoreMultiHostInt" /> class.
         /// </summary>
         /// <param name="context">The <c>DbContext</c>.</param>
-        public UserStoreMultiHostInt(DbContext context)
-            : base(context)
+        /// <param name="hostId">The default host id.</param>
+        /// <param name="systemHostId">The system host identifier.</param>
+        public UserStoreMultiHostInt(DbContext context, int hostId, int systemHostId)
+            : base(context, hostId, systemHostId)
         {
             Contract.Requires<ArgumentNullException>(context != null, "context");
+            Contract.Requires<ArgumentException>(hostId > 0);
+            Contract.Requires<ArgumentException>(systemHostId > 0);
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="UserStoreMultiHostInt"/> class.
+        /// Creates the user manager.
         /// </summary>
-        /// <param name="context">The <c>DbContext</c>.</param>
-        /// <param name="hostId">The default host id.</param>
-        public UserStoreMultiHostInt(DbContext context, int hostId)
-            : base(context, hostId)
+        /// <returns></returns>
+        protected override UserManagerMultiHost<TUser, IdentityRoleMultiHostInt, int, IdentityUserLoginMultiHostInt, IdentityUserRoleMultiHostInt, IdentityUserClaimMultiHostInt> CreateUserManager()
         {
-            Contract.Requires<ArgumentNullException>(context != null, "context");
-            Contract.Requires<ArgumentException>(hostId > 0); // TODO: what about a "default" host
+            return new UserManagerMultiHostInt<TUser>(this);
         }
 
         /// <summary>
         /// Gets a <c>UserManager</c>.
         /// </summary>
         /// <returns></returns>
-        public UserManagerMultiHostInt GetUserManager()
+        public UserManagerMultiHostInt<TUser> GetUserManager()
         {
-            return new UserManagerMultiHostInt(this);
-        }
-
-        /// <summary>
-        /// Finds the user id for the given login info and host.
-        /// </summary>
-        /// <param name="login">The user's login info.</param>
-        /// <param name="hostId">The host id.</param>
-        /// <returns>
-        /// The user's id
-        /// </returns>
-        internal override int FindUserId(UserLoginInfo login, int hostId)
-        {
-            return Context.Set<IdentityUserLoginMultiHostInt>().Where(l => l.LoginProvider == login.LoginProvider && l.ProviderKey == login.ProviderKey && l.HostId.Equals(hostId))
-                .Select(l => l.UserId)
-                .SingleOrDefault();
+            return (UserManagerMultiHostInt<TUser>)UserManager;
         }
     }
 
     /// <summary>
     /// EntityFramework <c>UserStore</c> implementation for a multi-tenant <c>DbContext</c> having key and host key of type <c>long</c>.
     /// </summary>
-    public class UserStoreMultiHostLong : UserStoreMultiHost<IdentityUserMultiHost<long, long>, long, long>
+    public class UserStoreMultiHostLong<TUser> : UserStoreMultiHost<TUser, IdentityRoleMultiHostLong, long, IdentityUserLoginMultiHostLong, IdentityUserRoleMultiHostLong, IdentityUserClaimMultiHostLong>
+        where TUser : IdentityUserMultiHostLong, IUserMultiHostLong, new()
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="UserStoreMultiHostLong" /> class.
         /// </summary>
         /// <param name="context">The <c>DbContext</c>.</param>
-        public UserStoreMultiHostLong(DbContext context)
-            : base(context)
+        /// <param name="hostId">The default host id.</param>
+        /// <param name="systemHostId">The system host identifier.</param>
+        public UserStoreMultiHostLong(DbContext context, long hostId, long systemHostId)
+            : base(context, hostId, systemHostId)
         {
             Contract.Requires<ArgumentNullException>(context != null, "context");
+            Contract.Requires<ArgumentException>(hostId > 0);
+            Contract.Requires<ArgumentException>(systemHostId > 0);
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="UserStoreMultiHostLong"/> class.
+        /// Creates the user manager.
         /// </summary>
-        /// <param name="context">The <c>DbContext</c>.</param>
-        /// <param name="hostId">The default host id.</param>
-        public UserStoreMultiHostLong(DbContext context, long hostId)
-            : base(context, hostId)
+        /// <returns></returns>
+        protected override UserManagerMultiHost<TUser, IdentityRoleMultiHostLong, long, IdentityUserLoginMultiHostLong, IdentityUserRoleMultiHostLong, IdentityUserClaimMultiHostLong> CreateUserManager()
         {
-            Contract.Requires<ArgumentNullException>(context != null, "context");
-            Contract.Requires<ArgumentException>(hostId > 0); // TODO: what about a "default" host
+            return new UserManagerMultiHostLong<TUser>(this);
         }
 
         /// <summary>
         /// Gets a <c>UserManager</c>.
         /// </summary>
         /// <returns></returns>
-        public UserManagerMultiHostLong GetUserManager()
+        public UserManagerMultiHostLong<TUser> GetUserManager()
         {
-            return new UserManagerMultiHostLong(this);
-        }
-
-        /// <summary>
-        /// Finds the user id for the given login info and host.
-        /// </summary>
-        /// <param name="login">The user's login info.</param>
-        /// <param name="hostId">The host id.</param>
-        /// <returns>
-        /// The user's id
-        /// </returns>
-        internal override long FindUserId(UserLoginInfo login, long hostId)
-        {
-            return Context.Set<IdentityUserLoginMultiHostLong>().Where(l => l.LoginProvider == login.LoginProvider && l.ProviderKey == login.ProviderKey && l.HostId.Equals(hostId))
-                .Select(l => l.UserId)
-                .SingleOrDefault();
+            return (UserManagerMultiHostLong<TUser>)UserManager;
         }
     }
 }
