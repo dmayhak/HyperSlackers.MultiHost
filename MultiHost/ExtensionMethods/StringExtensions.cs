@@ -13,7 +13,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace HyperSlackers.MultiHost.Extensions
+namespace HyperSlackers.AspNet.Identity.EntityFramework
 {
     public static class StringExtensions
     {

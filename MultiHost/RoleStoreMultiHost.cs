@@ -12,9 +12,8 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using HyperSlackers.MultiHost.Extensions;
 
-namespace HyperSlackers.MultiHost
+namespace HyperSlackers.AspNet.Identity.EntityFramework
 {
 	/// <summary>
 	/// EntityFramework <c>RoleStore</c> implementation for a multi-tenant <c>DbContext</c>.
@@ -38,15 +37,15 @@ namespace HyperSlackers.MultiHost
 		/// <param name="context">The <c>DbContext</c>.</param>
 		/// <param name="hostId">The default host id to use when host id not specified.</param>
 		/// <param name="systemHostId">The system host identifier (owns global users, roles, etc.)</param>
-		public RoleStoreMultiHost(DbContext context, TKey hostId, TKey systemHostId)
+		public RoleStoreMultiHost(DbContext context, TKey systemHostId, TKey hostId)
 			: base(context)
 		{
 			Contract.Requires<ArgumentNullException>(context != null, "context");
-			Contract.Requires<ArgumentNullException>(!hostId.Equals(default(TKey)), "hostId");
 			Contract.Requires<ArgumentNullException>(!systemHostId.Equals(default(TKey)), "systemHostId");
+			Contract.Requires<ArgumentNullException>(!hostId.Equals(default(TKey)), "hostId");
 
-			this.HostId = hostId;
 			this.SystemHostId = systemHostId;
+			this.HostId = hostId;
 			this.RoleManager = CreateRoleManager();
 		}
 
@@ -199,44 +198,6 @@ namespace HyperSlackers.MultiHost
 	}
 
 	/// <summary>
-	/// EntityFramework <c>RoleStore</c> implementation for a multi-tenant <c>DbContext</c> having key and host key data types of <c>string</c>.
-	/// </summary>
-	public class RoleStoreMultiHostString : RoleStoreMultiHost<IdentityRoleMultiHostString, string, IdentityUserRoleMultiHostString>
-	{
-		/// <summary>
-		/// Initializes a new instance of the <see cref="RoleStoreMultiHostString" /> class.
-		/// </summary>
-		/// <param name="context">The <c>DbContext</c>.</param>
-		/// <param name="hostId">The host id.</param>
-		/// <param name="systemHostId">The system host identifier.</param>
-		public RoleStoreMultiHostString(DbContext context, string hostId, string systemHostId)
-			: base(context, hostId, systemHostId)
-		{
-			Contract.Requires<ArgumentNullException>(context != null, "context");
-			Contract.Requires<ArgumentNullException>(!hostId.IsNullOrWhiteSpace(), "hostId");
-			Contract.Requires<ArgumentNullException>(!systemHostId.IsNullOrWhiteSpace(), "systemHostId");
-        }
-
-        /// <summary>
-        /// Creates the role manager.
-        /// </summary>
-        /// <returns></returns>
-        protected override RoleManagerMultiHost<IdentityRoleMultiHostString, string, IdentityUserRoleMultiHostString> CreateRoleManager()
-        {
-            return new RoleManagerMultiHostString(this);
-        }
-
-        /// <summary>
-        /// Gets a <c>RoleManager</c>.
-        /// </summary>
-        /// <returns></returns>
-        public RoleManagerMultiHostString GetRoleManager()
-        {
-            return (RoleManagerMultiHostString)base.RoleManager;
-        }
-	}
-
-	/// <summary>
 	/// EntityFramework <c>RoleStore</c> implementation for a multi-tenant <c>DbContext</c> having key and host key data types of <c>Guid</c>.
 	/// </summary>
 	public class RoleStoreMultiHostGuid : RoleStoreMultiHost<IdentityRoleMultiHostGuid, Guid, IdentityUserRoleMultiHostGuid>
@@ -247,12 +208,12 @@ namespace HyperSlackers.MultiHost
 		/// <param name="context">The <c>DbContext</c>.</param>
 		/// <param name="hostId">The host id.</param>
 		/// <param name="systemHostId">The system host identifier.</param>
-		public RoleStoreMultiHostGuid(DbContext context, Guid hostId, Guid systemHostId)
-			: base(context, hostId, systemHostId)
+		public RoleStoreMultiHostGuid(DbContext context, Guid systemHostId, Guid hostId)
+			: base(context, systemHostId, hostId)
 		{
 			Contract.Requires<ArgumentNullException>(context != null, "context");
-			Contract.Requires<ArgumentNullException>(hostId != Guid.Empty, "hostId");
 			Contract.Requires<ArgumentNullException>(systemHostId != Guid.Empty, "systemHostId");
+			Contract.Requires<ArgumentNullException>(hostId != Guid.Empty, "hostId");
         }
 
         /// <summary>
@@ -285,12 +246,12 @@ namespace HyperSlackers.MultiHost
 		/// <param name="context">The <c>DbContext</c>.</param>
 		/// <param name="hostId">The host id.</param>
 		/// <param name="systemHostId">The system host identifier.</param>
-		public RoleStoreMultiHostInt(DbContext context, int hostId, int systemHostId)
-			: base(context, hostId, systemHostId)
+		public RoleStoreMultiHostInt(DbContext context, int systemHostId, int hostId)
+			: base(context, systemHostId, hostId)
 		{
 			Contract.Requires<ArgumentNullException>(context != null, "context");
-			Contract.Requires<ArgumentException>(hostId > 0);
 			Contract.Requires<ArgumentException>(systemHostId > 0);
+			Contract.Requires<ArgumentException>(hostId > 0);
         }
 
         /// <summary>
@@ -322,12 +283,12 @@ namespace HyperSlackers.MultiHost
 		/// </summary>
 		/// <param name="context">The <c>DbContext</c>.</param>
 		/// <param name="hostId">The host id.</param>
-		public RoleStoreMultiHostLong(DbContext context, long hostId, long systemHostId)
-			: base(context, hostId, systemHostId)
+		public RoleStoreMultiHostLong(DbContext context, long systemHostId, long hostId)
+			: base(context, systemHostId, hostId)
 		{
 			Contract.Requires<ArgumentNullException>(context != null, "context");
-			Contract.Requires<ArgumentException>(hostId > 0);
 			Contract.Requires<ArgumentException>(systemHostId > 0);
+			Contract.Requires<ArgumentException>(hostId > 0);
 		}
 
         /// <summary>

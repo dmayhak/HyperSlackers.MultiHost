@@ -3,6 +3,7 @@
 // This software may be modified and distributed under the terms
 // of the MIT license.  See the LICENSE file for details.
 
+using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using System;
 using System.Collections.Generic;
@@ -15,9 +16,13 @@ using System.Data.Entity.Validation;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using HyperSlackers.MultiHost.Extensions;
+using HyperSlackers.AspNet.Identity.EntityFramework.Entities;
+using System.Reflection;
+using System.Data.Entity.Core.Objects;
+using System.Web;
+using System.Collections;
 
-namespace HyperSlackers.MultiHost
+namespace HyperSlackers.AspNet.Identity.EntityFramework
 {
     /// <summary>
     /// Generic <c>IdentityDbContextMultiHost</c> base that allows the ASP.NET Identity system to support multiple
@@ -25,47 +30,88 @@ namespace HyperSlackers.MultiHost
     /// </summary>
     /// <typeparam name="TUser">A user type derived from <c>IdentityRoleMultiHost{TKey}</c>.</typeparam>
     /// <typeparam name="TKey">The key type. (Typically <c>string</c>, <c>Guid</c>, <c>int</c>, or <c>long</c>.)</typeparam>
-    public class IdentityDbContextMultiHost<TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim> : IdentityDbContext<TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim>
+    public class IdentityDbContextMultiHost<THost, TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim, TAudit, TAuditItem> : AuditingDbContext<TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim, TAudit, TAuditItem> // IdentityDbContext<TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim>
+        where THost : IdentityHost<TKey>, new()
+        where TUser : IdentityUserMultiHost<TKey, TUserLogin, TUserRole, TUserClaim>, IUserMultiHost<TKey>, new()
+        where TRole : IdentityRoleMultiHost<TKey, TUserRole>, IRoleMultiHost<TKey>, new()
         where TKey : IEquatable<TKey>
-        where TUser : Microsoft.AspNet.Identity.EntityFramework.IdentityUser<TKey, TUserLogin, TUserRole, TUserClaim>, IUserMultiHost<TKey>, new()
-        where TRole : Microsoft.AspNet.Identity.EntityFramework.IdentityRole<TKey, TUserRole>, IRoleMultiHost<TKey>, new()
-        where TUserLogin : Microsoft.AspNet.Identity.EntityFramework.IdentityUserLogin<TKey>, IUserLoginMultiHost<TKey>, new()
-        where TUserRole : Microsoft.AspNet.Identity.EntityFramework.IdentityUserRole<TKey>, IUserRoleMultiHost<TKey>, new()
-        where TUserClaim : Microsoft.AspNet.Identity.EntityFramework.IdentityUserClaim<TKey>, IUserClaimMultiHost<TKey>, new()
+        where TUserLogin : IdentityUserLoginMultiHost<TKey>, IUserLoginMultiHost<TKey>, new()
+        where TUserRole : IdentityUserRoleMultiHost<TKey>, IUserRoleMultiHost<TKey>, new()
+        where TUserClaim : IdentityUserClaimMultiHost<TKey>, IUserClaimMultiHost<TKey>, new()
+        where TAudit : Audit<TKey>, new()
+        where TAuditItem : AuditItem<TKey>, new()
     {
-        public TKey HostId { get; private set; }
         public TKey SystemHostId { get; private set; }
-        public string UsersTableName { get; set; }
-        public string RolesTableName { get; set; }
-        public string UserClaimsTableName { get; set; }
-        public string UserLoginsTableName { get; set; }
-        public string UserRolesTableName { get; set; }
-        public string SchemaName { get; set; }
+
+        // table renaming; override to have custom table names
+        public virtual string SchemaName { get { return ""; } }
+        public virtual string UsersTableName { get { return "AspNetUsers"; } }
+        public virtual string RolesTableName { get { return "AspNetRoles"; } }
+        public virtual string UserClaimsTableName { get { return "AspNetUserClaims"; } }
+        public virtual string UserLoginsTableName { get { return "AspNetUserLogins"; } }
+        public virtual string UserRolesTableName { get { return "AspNetUserRoles"; } }
+        public virtual string HostsTableName { get { return "AspNetHosts"; } }
+        public virtual string HostDomainsTableName { get { return "AspNetHostDomains"; } }
+
+        // host dbsets
+        public DbSet<THost> Hosts { get; set; }
+        public DbSet<IdentityHostDomain> HostDomains { get; set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="IdentityDbContextMultiHost{TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim}"/> class.
+        /// Initializes a new instance of the <see cref="IdentityDbContextMultiHost{TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim}" /> class.
         /// </summary>
-        /// <param name="hostId">The host identifier.</param>
-        /// <param name="systemHostId">The system host identifier.</param>
-        public IdentityDbContextMultiHost(TKey hostId, TKey systemHostId)
-            : this("DefaultConnection", hostId, systemHostId)
+        public IdentityDbContextMultiHost(TKey systemHostId, bool disableAuditing = false)
+            : this("DefaultConnection", systemHostId, disableAuditing)
         {
-            Contract.Requires<ArgumentNullException>(!hostId.Equals(default(TKey)), "hostId");
-            Contract.Requires<ArgumentNullException>(!systemHostId.Equals(default(TKey)), "systemHostId");
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="IdentityDbContextMultiHost{TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim}"/> class.
+        /// Initializes a new instance of the <see cref="IdentityDbContextMultiHost{TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim}" /> class.
         /// </summary>
         /// <param name="nameOrConnectionString">The name or connection string.</param>
-        /// <param name="hostId">The host identifier.</param>
-        /// <param name="systemHostId">The system host identifier.</param>
-        public IdentityDbContextMultiHost(string nameOrConnectionString, TKey hostId, TKey systemHostId)
-            : base(nameOrConnectionString)
+        public IdentityDbContextMultiHost(string nameOrConnectionString, TKey systemHostId, bool disableAuditing = false)
+            : base(nameOrConnectionString, disableAuditing)
         {
             Contract.Requires<ArgumentNullException>(!nameOrConnectionString.IsNullOrWhiteSpace(), "nameOrConnectionString");
-            Contract.Requires<ArgumentNullException>(!hostId.Equals(default(TKey)), "hostId");
-            Contract.Requires<ArgumentNullException>(!systemHostId.Equals(default(TKey)), "systemHostId");
+
+            this.SystemHostId = systemHostId;
+        }
+
+        protected override TKey GetHostId()
+        {
+            var hostName = GetHostName();
+            var hostDomain = this.Set<IdentityHostDomain>().SingleOrDefault(d => d.DomainName.ToUpper() == hostName.ToUpper());
+
+            if (hostDomain != null)
+            {
+                var host = this.Set<THost>().SingleOrDefault(h => h.Id == hostDomain.HostId);
+                if (host != null)
+                {
+                    return host.HostId;
+                }
+            }
+
+            // if not found, return system host id as default
+            return SystemHostId;
+        }
+
+        protected override TKey GetUserId()
+        {
+            var hostId = GetHostId();
+            var userName = GetUserName();
+
+            if (!hostId.Equals(default(TKey)) && !userName.IsNullOrWhiteSpace() && userName != "<system>")
+            {
+                var user = this.Set<TUser>().SingleOrDefault(u => u.UserName.ToUpper() == userName.ToUpper() && (u.HostId.Equals(hostId) || u.IsGlobal == true));
+                if (user != null)
+                {
+                    return user.Id;
+                }
+            }
+
+            // TODO: windows, or just go to base class?
+
+            return base.GetUserId();
         }
 
         /// <summary>
@@ -83,7 +129,7 @@ namespace HyperSlackers.MultiHost
                 if (user != null)
                 {
                     // TODO: test that this is what we really want here....
-                    if (Users.Any(u => u.UserName == user.UserName && u.HostId.Equals(user.HostId)))
+                    if (Users.Any(u => u.UserName.ToUpper() == user.UserName.ToUpper() && u.HostId.Equals(user.HostId)))
                     {
                         return new DbEntityValidationResult(entityEntry, new[] { new DbValidationError("UserName", "UserName already exists for Host") });
                     }
@@ -119,77 +165,65 @@ namespace HyperSlackers.MultiHost
             modelBuilder.Entity<TUser>()
                 .Property(u => u.UserName).IsRequired()
                 .HasColumnAnnotation("Index", new IndexAnnotation(new IndexAttribute("UserNameIndex", 1) { IsUnique = true }));
-        }
-    }
 
-    /// <summary>
-    /// Multi-tenant <c>IdentityDContest</c> having key as <c>string</c> types
-    /// </summary>
-    /// <typeparam name="TUser">A user type derived from <c>IdentityUserMultiHostString</c>.</typeparam>
-    public class IdentityDbContextMultiHostString<TUser> : IdentityDbContextMultiHost<TUser, IdentityRoleMultiHostString, string, IdentityUserLoginMultiHostString, IdentityUserRoleMultiHostString, IdentityUserClaimMultiHostString>
-        where TUser : IdentityUserMultiHostString, new()
-    {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="IdentityDbContextMultiHostString{TUser}"/> class.
-        /// </summary>
-        public IdentityDbContextMultiHostString(string hostId, string systemHostId)
-            : this("DefaultConnection", hostId, systemHostId)
-        {
-            Contract.Requires<ArgumentNullException>(!hostId.IsNullOrWhiteSpace(), "hostId");
-            Contract.Requires<ArgumentNullException>(!systemHostId.IsNullOrWhiteSpace(), "systemHostId");
+           // hosts tables
+            modelBuilder.Entity<THost>()
+                .ToTable((HostsTableName.IsNullOrWhiteSpace() ? "AspNetHosts" : HostsTableName), (SchemaName.IsNullOrWhiteSpace() ? "dbo" : SchemaName));
+            modelBuilder.Entity<IdentityHostDomain>()
+                 .ToTable((HostDomainsTableName.IsNullOrWhiteSpace() ? "AspNetHostDomains" : HostDomainsTableName), (SchemaName.IsNullOrWhiteSpace() ? "dbo" : SchemaName));
+
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="IdentityDbContextMultiHostString{TUser}"/> class.
-        /// </summary>
-        /// <param name="nameOrConnectionString">The name or connection string.</param>
-        public IdentityDbContextMultiHostString(string nameOrConnectionString, string hostId, string systemHostId)
-            : base(nameOrConnectionString, hostId, systemHostId)
-        {
-            Contract.Requires<ArgumentNullException>(!nameOrConnectionString.IsNullOrWhiteSpace(), "nameOrConnectionString");
-            Contract.Requires<ArgumentNullException>(!hostId.IsNullOrWhiteSpace(), "hostId");
-            Contract.Requires<ArgumentNullException>(!systemHostId.IsNullOrWhiteSpace(), "systemHostId");
-        }
+        //protected virtual TKey GetCurrentUserId()
+        //{
+        //    if (this.UserId.Equals(default(TKey)))
+        //    {
+        //        System.Web.HttpContext context = System.Web.HttpContext.Current;
+        //        if (context != null)
+        //        {
+        //            if (context.User != null)
+        //            {
+        //                if (context.User.Identity != null)
+        //                {
+        //                    var userName = context.User.Identity.Name;
+        //                    var user = this.Users.Where(u => u.UserName == userName && )
+        //                }
+        //            }
+        //        }
+        //    }
 
-        /// <summary>
-        /// Maps table names, and sets up relationships between the various user entities.
-        /// </summary>
-        /// <param name="modelBuilder">The model builder.</param>
-        protected override void OnModelCreating(DbModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
+        //    return this.UserId;
+        //}
 
-            modelBuilder.Entity<TUser>().Property(u => u.HostId).IsRequired().HasMaxLength(256).HasColumnAnnotation("Index", new IndexAnnotation(new IndexAttribute("UserNameIndex", 0) { IsUnique = true }));
-        }
+        //protected virtual TKey GetCurrentHostId()
+        //{
+        //    return default(TKey); // TODO:
+        //}
     }
 
     /// <summary>
     /// Multi-tenant <c>IdentityDContest</c> having both key and host key as <c>Guid</c> types
     /// </summary>
     /// <typeparam name="TUser">A user type derived from <c>IdentityUserMultiHostGuid</c>.</typeparam>
-    public class IdentityDbContextMultiHostGuid<TUser> : IdentityDbContextMultiHost<TUser, IdentityRoleMultiHostGuid, Guid, IdentityUserLoginMultiHostGuid, IdentityUserRoleMultiHostGuid, IdentityUserClaimMultiHostGuid>
+    public class IdentityDbContextMultiHostGuid<TUser> : IdentityDbContextMultiHost<IdentityHostGuid, TUser, IdentityRoleMultiHostGuid, Guid, IdentityUserLoginMultiHostGuid, IdentityUserRoleMultiHostGuid, IdentityUserClaimMultiHostGuid, AuditGuid, AuditItemGuid>
         where TUser : IdentityUserMultiHostGuid, new()
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityDbContextMultiHostGuid{TUser}"/> class.
         /// </summary>
-        public IdentityDbContextMultiHostGuid(Guid hostId, Guid systemHostId)
-            : this("DefaultConnection", hostId, systemHostId)
+        public IdentityDbContextMultiHostGuid(Guid systemHostId, bool disableAuditing = false)
+            : this("DefaultConnection", systemHostId, disableAuditing)
         {
-            Contract.Requires<ArgumentNullException>(hostId != Guid.Empty, "hostId");
-            Contract.Requires<ArgumentNullException>(systemHostId != Guid.Empty, "systemHostId");
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityDbContextMultiHostGuid{TUser}"/> class.
         /// </summary>
         /// <param name="nameOrConnectionString">The name or connection string.</param>
-        public IdentityDbContextMultiHostGuid(string nameOrConnectionString, Guid hostId, Guid systemHostId)
-            : base(nameOrConnectionString, hostId, systemHostId)
+        public IdentityDbContextMultiHostGuid(string nameOrConnectionString, Guid systemHostId, bool disableAuditing = false)
+            : base(nameOrConnectionString, systemHostId, disableAuditing)
         {
             Contract.Requires<ArgumentNullException>(!nameOrConnectionString.IsNullOrWhiteSpace(), "nameOrConnectionString");
-            Contract.Requires<ArgumentNullException>(hostId != Guid.Empty, "hostId");
-            Contract.Requires<ArgumentNullException>(systemHostId != Guid.Empty, "systemHostId");
         }
 
         /// <summary>
@@ -208,29 +242,25 @@ namespace HyperSlackers.MultiHost
     /// Multi-tenant <c>IdentityDContest</c> having both key and host key as <c>int</c> types
     /// </summary>
     /// <typeparam name="TUser">A user type derived from <c>IdentityUserMultiHostInt</c>.</typeparam>
-    public class IdentityDbContextMultiHostInt<TUser> : IdentityDbContextMultiHost<TUser, IdentityRoleMultiHostInt, int, IdentityUserLoginMultiHostInt, IdentityUserRoleMultiHostInt, IdentityUserClaimMultiHostInt>
+    public class IdentityDbContextMultiHostInt<TUser> : IdentityDbContextMultiHost<IdentityHostInt, TUser, IdentityRoleMultiHostInt, int, IdentityUserLoginMultiHostInt, IdentityUserRoleMultiHostInt, IdentityUserClaimMultiHostInt, AuditInt, AuditItemInt>
         where TUser : IdentityUserMultiHostInt, new()
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityDbContextMultiHostInt{TUser}"/> class.
         /// </summary>
-        public IdentityDbContextMultiHostInt(int hostId, int systemHostId)
-            : this("DefaultConnection", hostId, systemHostId)
+        public IdentityDbContextMultiHostInt(int systemHostId, bool disableAuditing = false)
+            : this("DefaultConnection", systemHostId, disableAuditing)
         {
-            Contract.Requires<ArgumentException>(hostId > 0);
-            Contract.Requires<ArgumentException>(systemHostId > 0);
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityDbContextMultiHostInt{TUser}"/> class.
         /// </summary>
         /// <param name="nameOrConnectionString">The name or connection string.</param>
-        public IdentityDbContextMultiHostInt(string nameOrConnectionString, int hostId, int systemHostId)
-            : base(nameOrConnectionString, hostId, systemHostId)
+        public IdentityDbContextMultiHostInt(string nameOrConnectionString, int systemHostId, bool disableAuditing = false)
+            : base(nameOrConnectionString, systemHostId, disableAuditing)
         {
             Contract.Requires<ArgumentNullException>(!nameOrConnectionString.IsNullOrWhiteSpace(), "nameOrConnectionString");
-            Contract.Requires<ArgumentException>(hostId > 0);
-            Contract.Requires<ArgumentException>(systemHostId > 0);
         }
 
         /// <summary>
@@ -249,30 +279,25 @@ namespace HyperSlackers.MultiHost
     /// Multi-tenant <c>IdentityDContest</c> having both key and host key as <c>long</c> types
     /// </summary>
     /// <typeparam name="TUser">A user type derived from <c>IdentityUserMultiHostLong</c>.</typeparam>
-    public class IdentityDbContextMultiHostLong<TUser> : IdentityDbContextMultiHost<TUser, IdentityRoleMultiHostLong, long, IdentityUserLoginMultiHostLong, IdentityUserRoleMultiHostLong, IdentityUserClaimMultiHostLong>
-    //public class IdentityDbContexMultiHosttLong<TUser> : IdentityDbContext<TUser, IdentityRoleMultiHostLong, long, IdentityUserLoginMultiHostLong, IdentityUserRoleMultiHostLong, IdentityUserClaimMultiHostLong>
+    public class IdentityDbContextMultiHostLong<TUser> : IdentityDbContextMultiHost<IdentityHostLong, TUser, IdentityRoleMultiHostLong, long, IdentityUserLoginMultiHostLong, IdentityUserRoleMultiHostLong, IdentityUserClaimMultiHostLong, AuditLong, AuditItemLong>
         where TUser : IdentityUserMultiHostLong, new()
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityDbContexMultiHosttLong{TUser}"/> class.
         /// </summary>
-        public IdentityDbContextMultiHostLong(long hostId, long systemHostId)
-            : this("DefaultConnection", hostId, systemHostId)
+        public IdentityDbContextMultiHostLong(long systemHostId, bool disableAuditing = false)
+            : this("DefaultConnection", systemHostId, disableAuditing)
         {
-            Contract.Requires<ArgumentException>(hostId > 0);
-            Contract.Requires<ArgumentException>(systemHostId > 0);
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityDbContexMultiHosttLong{TUser}"/> class.
         /// </summary>
         /// <param name="nameOrConnectionString">The name or connection string.</param>
-        public IdentityDbContextMultiHostLong(string nameOrConnectionString, long hostId, long systemHostId)
-            : base(nameOrConnectionString, hostId, systemHostId)
+        public IdentityDbContextMultiHostLong(string nameOrConnectionString, long systemHostId, bool disableAuditing = false)
+            : base(nameOrConnectionString, systemHostId, disableAuditing)
         {
             Contract.Requires<ArgumentNullException>(!nameOrConnectionString.IsNullOrWhiteSpace(), "nameOrConnectionString");
-            Contract.Requires<ArgumentException>(hostId > 0);
-            Contract.Requires<ArgumentException>(systemHostId > 0);
         }
 
         /// <summary>
@@ -287,3 +312,4 @@ namespace HyperSlackers.MultiHost
         }
     }
 }
+

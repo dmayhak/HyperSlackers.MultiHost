@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace HyperSlackers.MultiHost
+namespace HyperSlackers.AspNet.Identity.EntityFramework
 {
     internal static class AsyncHelper
     {

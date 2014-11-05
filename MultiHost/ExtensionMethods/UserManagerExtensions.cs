@@ -10,9 +10,8 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
-using HyperSlackers.MultiHost.Extensions;
 
-namespace HyperSlackers.MultiHost
+namespace HyperSlackers.AspNet.Identity.EntityFramework
 {
     public static class UserManagerExtensions
     {

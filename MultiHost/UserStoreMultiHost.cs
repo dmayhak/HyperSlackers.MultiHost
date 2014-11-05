@@ -13,9 +13,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Identity;
 using System.Security.Claims;
-using HyperSlackers.MultiHost.Extensions;
 
-namespace HyperSlackers.MultiHost
+namespace HyperSlackers.AspNet.Identity.EntityFramework
 {
     /// <summary>
     /// EntityFramework <c>UserStore</c> implementation for a multi-tenant <c>DbContext</c>.
@@ -44,12 +43,12 @@ namespace HyperSlackers.MultiHost
         /// </summary>
         /// <param name="context">The <c>DbContext</c>.</param>
         /// <param name="hostId">The default host id.</param>
-        public UserStoreMultiHost(DbContext context, TKey hostId, TKey systemHostId)
+        public UserStoreMultiHost(DbContext context, TKey systemHostId, TKey hostId)
             : base(context)
         {
             Contract.Requires<ArgumentNullException>(context != null, "context");
-            Contract.Requires<ArgumentNullException>(!hostId.Equals(default(TKey)), "hostId");
             Contract.Requires<ArgumentNullException>(!systemHostId.Equals(default(TKey)), "systemHostId");
+            Contract.Requires<ArgumentNullException>(!hostId.Equals(default(TKey)), "hostId");
 
             this.HostId = hostId;
             this.SystemHostId = systemHostId;
@@ -577,45 +576,6 @@ namespace HyperSlackers.MultiHost
     }
 
     /// <summary>
-    /// EntityFramework <c>UserStore</c> implementation for a multi-tenant <c>DbContext</c> having key and host key of type <c>string</c>.
-    /// </summary>
-    public class UserStoreMultiHostString<TUser> : UserStoreMultiHost<TUser, IdentityRoleMultiHostString, string, IdentityUserLoginMultiHostString, IdentityUserRoleMultiHostString, IdentityUserClaimMultiHostString>
-        where TUser : IdentityUserMultiHostString, IUserMultiHostString, new()
-    {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="UserStoreMultiHostString" /> class.
-        /// </summary>
-        /// <param name="context">The <c>DbContext</c>.</param>
-        /// <param name="hostId">The host id.</param>
-        /// <param name="systemHostId">The system host identifier.</param>
-        public UserStoreMultiHostString(DbContext context, string hostId, string systemHostId)
-            : base(context, hostId, systemHostId)
-        {
-            Contract.Requires<ArgumentNullException>(context != null, "context");
-            Contract.Requires<ArgumentNullException>(!hostId.IsNullOrWhiteSpace(), "hostId");
-            Contract.Requires<ArgumentNullException>(!systemHostId.IsNullOrWhiteSpace(), "systemHostId");
-        }
-
-        /// <summary>
-        /// Creates the user manager.
-        /// </summary>
-        /// <returns></returns>
-        protected override UserManagerMultiHost<TUser, IdentityRoleMultiHostString, string, IdentityUserLoginMultiHostString, IdentityUserRoleMultiHostString, IdentityUserClaimMultiHostString> CreateUserManager()
-        {
-            return new UserManagerMultiHostString<TUser>(this);
-        }
-
-        /// <summary>
-        /// Gets a <c>UserManager</c>.
-        /// </summary>
-        /// <returns></returns>
-        public UserManagerMultiHostString<TUser> GetUserManager()
-        {
-            return (UserManagerMultiHostString<TUser>)UserManager;
-        }
-    }
-
-    /// <summary>
     /// EntityFramework <c>UserStore</c> implementation for a multi-tenant <c>DbContext</c> having key and host key of type <c>Guid</c>.
     /// </summary>
     public class UserStoreMultiHostGuid<TUser> : UserStoreMultiHost<TUser, IdentityRoleMultiHostGuid, Guid, IdentityUserLoginMultiHostGuid, IdentityUserRoleMultiHostGuid, IdentityUserClaimMultiHostGuid>
@@ -627,12 +587,12 @@ namespace HyperSlackers.MultiHost
         /// <param name="context">The <c>DbContext</c>.</param>
         /// <param name="hostId">The default host id.</param>
         /// <param name="systemHostId">The system host identifier.</param>
-        public UserStoreMultiHostGuid(DbContext context, Guid hostId, Guid systemHostId)
+        public UserStoreMultiHostGuid(DbContext context, Guid systemHostId, Guid hostId)
             : base(context, hostId, systemHostId)
         {
             Contract.Requires<ArgumentNullException>(context != null, "context");
-            Contract.Requires<ArgumentNullException>(hostId != Guid.Empty, "hostId");
             Contract.Requires<ArgumentNullException>(systemHostId != Guid.Empty, "systemHostId");
+            Contract.Requires<ArgumentNullException>(hostId != Guid.Empty, "hostId");
         }
 
         /// <summary>
@@ -666,12 +626,12 @@ namespace HyperSlackers.MultiHost
         /// <param name="context">The <c>DbContext</c>.</param>
         /// <param name="hostId">The default host id.</param>
         /// <param name="systemHostId">The system host identifier.</param>
-        public UserStoreMultiHostInt(DbContext context, int hostId, int systemHostId)
+        public UserStoreMultiHostInt(DbContext context, int systemHostId, int hostId)
             : base(context, hostId, systemHostId)
         {
             Contract.Requires<ArgumentNullException>(context != null, "context");
-            Contract.Requires<ArgumentException>(hostId > 0);
             Contract.Requires<ArgumentException>(systemHostId > 0);
+            Contract.Requires<ArgumentException>(hostId > 0);
         }
 
         /// <summary>
@@ -705,12 +665,12 @@ namespace HyperSlackers.MultiHost
         /// <param name="context">The <c>DbContext</c>.</param>
         /// <param name="hostId">The default host id.</param>
         /// <param name="systemHostId">The system host identifier.</param>
-        public UserStoreMultiHostLong(DbContext context, long hostId, long systemHostId)
+        public UserStoreMultiHostLong(DbContext context, long systemHostId, long hostId)
             : base(context, hostId, systemHostId)
         {
             Contract.Requires<ArgumentNullException>(context != null, "context");
-            Contract.Requires<ArgumentException>(hostId > 0);
             Contract.Requires<ArgumentException>(systemHostId > 0);
+            Contract.Requires<ArgumentException>(hostId > 0);
         }
 
         /// <summary>

@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HyperSlackers.MultiHost
+namespace HyperSlackers.AspNet.Identity.EntityFramework
 {
     /// <summary>
     /// Entity type that represents a user belonging to a role in a multi-tenant <c>DbContext</c>.
@@ -21,13 +21,6 @@ namespace HyperSlackers.MultiHost
     {
         public TKey HostId { get; set; }
         public bool IsGlobal { get; set; }
-    }
-
-    /// <summary>
-    /// Entity type that represents a user belonging to a role in a multi-tenant <c>DbContext</c> having a key type of <c>string</c>.
-    /// </summary>
-    public class IdentityUserRoleMultiHostString : IdentityUserRoleMultiHost<string>, IUserRoleMultiHostString
-    {
     }
 
     /// <summary>

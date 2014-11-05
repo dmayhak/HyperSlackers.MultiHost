@@ -10,9 +10,8 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using HyperSlackers.MultiHost.Extensions;
 
-namespace HyperSlackers.MultiHost
+namespace HyperSlackers.AspNet.Identity.EntityFramework
 {
     /// <summary>
     /// Represents a <c>Role</c> entity for a multi-tenant DbContext.
@@ -55,41 +54,6 @@ namespace HyperSlackers.MultiHost
 
             this.Name = name;
             this.HostId = hostId;
-        }
-    }
-
-    /// <summary>
-    /// Multi-tenant <c>Role</c> having both key and host key as <c>string</c> types
-    /// </summary>
-    public class IdentityRoleMultiHostString : IdentityRoleMultiHost<string, IdentityUserRoleMultiHostString>
-    {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="IdentityRoleMultiHostString"/> class.
-        /// </summary>
-        public IdentityRoleMultiHostString()
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="IdentityRoleMultiHostString"/> class.
-        /// </summary>
-        /// <param name="name">The name.</param>
-        public IdentityRoleMultiHostString(string name)
-            : base(name)
-        {
-            Contract.Requires<ArgumentNullException>(!name.IsNullOrWhiteSpace(), "name");
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="IdentityRoleMultiHostString"/> class.
-        /// </summary>
-        /// <param name="name">The name.</param>
-        /// <param name="hostId">The host identifier.</param>
-        public IdentityRoleMultiHostString(string name, string hostId)
-            : base(name, hostId)
-        {
-            Contract.Requires<ArgumentNullException>(!name.IsNullOrWhiteSpace(), "name");
-            Contract.Requires<ArgumentNullException>(!hostId.IsNullOrWhiteSpace(), "hostId");
         }
     }
 

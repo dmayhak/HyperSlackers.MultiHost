@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HyperSlackers.MultiHost
+namespace HyperSlackers.AspNet.Identity.EntityFramework
 {
     /// <summary>
     /// Entity type for a user's login (i.e. facebook, google) for a multi-tenant <c>DbContext</c>.
@@ -21,13 +21,6 @@ namespace HyperSlackers.MultiHost
     {
         public TKey HostId { get; set; }
         public bool IsGlobal { get; set; }
-    }
-
-    /// <summary>
-    /// Entity type for a user's login (i.e. facebook, google) for a multi-tenant <c>DbContext</c> having a key type of <c>string</c>.
-    /// </summary>
-    public class IdentityUserLoginMultiHostString : IdentityUserLoginMultiHost<string>, IUserLoginMultiHostString
-    {
     }
 
     /// <summary>

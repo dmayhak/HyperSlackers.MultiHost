@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HyperSlackers.MultiHost
+namespace HyperSlackers.AspNet.Identity.EntityFramework
 {
     /// <summary>
     /// Minimal interface for a user in a multi-tenant <c>DbContext</c>.
@@ -22,13 +22,6 @@ namespace HyperSlackers.MultiHost
     {
         TKey HostId { get; set; }
         bool IsGlobal { get; set; }
-    }
-
-    /// <summary>
-    /// Minimal interface for a user in a multi-tenant <c>DbContext</c> having key types of <c>string</c>.
-    /// </summary>
-    public interface IUserMultiHostString : IUserMultiHost<string>
-    {
     }
 
     /// <summary>

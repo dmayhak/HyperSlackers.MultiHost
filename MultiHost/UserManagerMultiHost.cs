@@ -12,9 +12,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Data.Entity;
 using System.Security.Claims;
-using HyperSlackers.MultiHost.Extensions;
 
-namespace HyperSlackers.MultiHost
+namespace HyperSlackers.AspNet.Identity.EntityFramework
 {
     /// <summary>
     /// Exposes user related API for a multi-tenant <c>DbContext</c> which will automatically save changes to the <c>UserStore</c>.
@@ -33,8 +32,8 @@ namespace HyperSlackers.MultiHost
         where TUserRole : IdentityUserRoleMultiHost<TKey>, IUserRoleMultiHost<TKey>, new()
         where TUserClaim : IdentityUserClaimMultiHost<TKey>, IUserClaimMultiHost<TKey>, new()
     {
-        protected internal TKey HostId { get; private set; }
         protected internal TKey SystemHostId { get; private set; }
+        protected internal TKey HostId { get; private set; }
         protected DbContext Context = null;
         private bool disposed = false;
 
@@ -51,8 +50,8 @@ namespace HyperSlackers.MultiHost
             this.UserValidator = new UserValidator<TUser, TKey>(this) { AllowOnlyAlphanumericUserNames = false, RequireUniqueEmail = false };
 
             this.Context = store.Context;
-            this.HostId = store.HostId;
             this.SystemHostId = store.SystemHostId;
+            this.HostId = store.HostId;
         }
 
         /// <summary>
@@ -201,6 +200,14 @@ namespace HyperSlackers.MultiHost
             if (role == null)
             {
                 throw new Exception(string.Format("Role '{0}' not found for hostId '{1}' or in global roles.", roleName, hostId));
+            }
+
+            var existing = Context.Set<TUserRole>().FirstOrDefault(ur => ur.UserId.Equals(userId) && ur.RoleId.Equals(role.Id) && ur.HostId.Equals(hostId));
+
+            if (existing != null)
+            {
+                // user already in this role, so we can ignore it
+                return IdentityResult.Success;
             }
 
             var userRole = new TUserRole()
@@ -794,23 +801,6 @@ namespace HyperSlackers.MultiHost
             }
 
             base.Dispose(disposing);
-        }
-    }
-
-    /// <summary>
-    /// Exposes user related API for a multi-tenant <c>DbContext</c> having key and host key of type <c>string</c>.
-    /// </summary>
-    public class UserManagerMultiHostString<TUser> : UserManagerMultiHost<TUser, IdentityRoleMultiHostString, string, IdentityUserLoginMultiHostString, IdentityUserRoleMultiHostString, IdentityUserClaimMultiHostString>
-        where TUser : IdentityUserMultiHostString, new()
-    {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="UserManagerMultiHostString" /> class.
-        /// </summary>
-        /// <param name="store">The <c>UserStore</c>.</param>
-        public UserManagerMultiHostString(UserStoreMultiHostString<TUser> store)
-            : base(store)
-        {
-            Contract.Requires<ArgumentNullException>(store != null, "store");
         }
     }
 

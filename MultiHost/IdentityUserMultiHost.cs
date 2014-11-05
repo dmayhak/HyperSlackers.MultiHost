@@ -10,9 +10,8 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using HyperSlackers.MultiHost.Extensions;
 
-namespace HyperSlackers.MultiHost
+namespace HyperSlackers.AspNet.Identity.EntityFramework
 {
     /// <summary>
     /// EntityFramework <c>IdentityUser</c> implementation for a multi-tenant <c>DbContext</c>.
@@ -46,29 +45,6 @@ namespace HyperSlackers.MultiHost
             Contract.Requires<ArgumentNullException>(!userName.IsNullOrWhiteSpace(), "userName");
 
             UserName = userName;
-        }
-    }
-
-    /// <summary>
-    /// EntityFramework <c>IdentityUser</c> implementation for a multi-tenant <c>DbContext</c> having a <c>string</c> key type.
-    /// </summary>
-    public class IdentityUserMultiHostString : IdentityUserMultiHost<string, IdentityUserLoginMultiHostString, IdentityUserRoleMultiHostString, IdentityUserClaimMultiHostString>, IUserMultiHostString
-    {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="IdentityUserMultiHostString"/> class.
-        /// </summary>
-        public IdentityUserMultiHostString()
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="IdentityUserMultiHostString"/> class.
-        /// </summary>
-        /// <param name="userName">The userName.</param>
-        public IdentityUserMultiHostString(string userName)
-            : base(userName)
-        {
-            Contract.Requires<ArgumentNullException>(!userName.IsNullOrWhiteSpace(), "userName");
         }
     }
 

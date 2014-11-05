@@ -7,8 +7,8 @@
     <ProjectGuid>{5090A265-7316-4F99-9955-5F4F8CA5E196}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>HyperSlackers.MultiHost</RootNamespace>
-    <AssemblyName>HyperSlackers.MultiHost</AssemblyName>
+    <RootNamespace>HyperSlackers.AspNet.Identity.EntityFramework</RootNamespace>
+    <AssemblyName>HyperSlackers.AspNet.Identity.EntityFramework.MultiHost</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <CodeContractsAssemblyMode>1</CodeContractsAssemblyMode>
@@ -175,6 +175,9 @@
     <Reference Include="EntityFramework.SqlServer">
       <HintPath>..\packages\EntityFramework.6.1.1\lib\net45\EntityFramework.SqlServer.dll</HintPath>
     </Reference>
+    <Reference Include="HyperSlackers.AspNet.Identity.EntityFramework.Auditing">
+      <HintPath>..\..\..\ThirdParty\HyperSlackers\Auditing\v4.5.1\Release\HyperSlackers.AspNet.Identity.EntityFramework.Auditing.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.AspNet.Identity.Core">
       <HintPath>..\packages\Microsoft.AspNet.Identity.Core.2.1.0\lib\net45\Microsoft.AspNet.Identity.Core.dll</HintPath>
     </Reference>
@@ -184,6 +187,8 @@
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Security" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -192,6 +197,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsyncHelper.cs" />
+    <Compile Include="Attributes\ChildAttribute.cs" />
+    <Compile Include="Attributes\ConvertNullToEmptyStringAttribute.cs" />
+    <Compile Include="Entities\HostDomain.cs" />
+    <Compile Include="Entities\Host.cs" />
+    <Compile Include="HostManager.cs" />
+    <Compile Include="HostStore.cs" />
     <Compile Include="ExtensionMethods\RoleManagerExtensions.cs" />
     <Compile Include="ExtensionMethods\StringExtensions.cs" />
     <Compile Include="ExtensionMethods\UserManagerExtensions.cs" />
@@ -202,11 +213,11 @@
     <Compile Include="IdentityUserLoginMultiHost.cs" />
     <Compile Include="IdentityUserMultiHost.cs" />
     <Compile Include="IdentityUserRoleMultiHost.cs" />
-    <Compile Include="IUserClaimMultiHost.cs" />
-    <Compile Include="IUserLoginMultiHost.cs" />
-    <Compile Include="IUserRoleMultiHost.cs" />
-    <Compile Include="IRoleMultiHost.cs" />
-    <Compile Include="IUserMultiHost.cs" />
+    <Compile Include="Interfaces\IUserClaimMultiHost.cs" />
+    <Compile Include="Interfaces\IUserLoginMultiHost.cs" />
+    <Compile Include="Interfaces\IUserRoleMultiHost.cs" />
+    <Compile Include="Interfaces\IRoleMultiHost.cs" />
+    <Compile Include="Interfaces\IUserMultiHost.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RoleManagerMultiHost.cs" />
     <Compile Include="RoleStoreMultiHost.cs" />
@@ -219,6 +230,7 @@
     <None Include="MultiHost.licenseheader" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>echo Post-build for $(ProjectName)

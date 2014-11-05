@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HyperSlackers.MultiHost
+namespace HyperSlackers.AspNet.Identity.EntityFramework
 {
     /// <summary>
     /// Minimal interface for a role for a multi-tenant <c>DbContext</c>.
@@ -21,13 +21,6 @@ namespace HyperSlackers.MultiHost
     {
         TKey HostId { get; set; }
         bool IsGlobal { get; set; }
-    }
-
-    /// <summary>
-    /// Minimal interface for a role for a multi-tenant <c>DbContext</c> having key type of <c>string</c>.
-    /// </summary>
-    public interface IRoleMultiHostString : IRoleMultiHost<string>
-    {
     }
 
     /// <summary>

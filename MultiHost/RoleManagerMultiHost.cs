@@ -11,9 +11,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Data.Entity;
-using HyperSlackers.MultiHost.Extensions;
 
-namespace HyperSlackers.MultiHost
+namespace HyperSlackers.AspNet.Identity.EntityFramework
 {
     /// <summary>
     /// Exposes role related API for a multi-tenant <c>DbContext</c> which will automatically save changes to the <c>RoleStore</c>.
@@ -26,8 +25,8 @@ namespace HyperSlackers.MultiHost
         where TRole :IdentityRoleMultiHost<TKey, TUserRole>, Microsoft.AspNet.Identity.IRole<TKey>, IRoleMultiHost<TKey>, new()
         where TUserRole : IdentityUserRoleMultiHost<TKey>, IUserRoleMultiHost<TKey>, new()
     {
-        public TKey HostId { get; private set; }
         public TKey SystemHostId { get; private set; }
+        public TKey HostId { get; private set; }
         protected DbContext Context { get; private set; }
         private bool disposed = false;
 
@@ -44,8 +43,8 @@ namespace HyperSlackers.MultiHost
             this.RoleValidator = new RoleValidatorMultiHost<TRole, TKey, TUserRole>(this);
 
             this.Context = store.Context;
-            this.HostId = store.HostId;
             this.SystemHostId = store.SystemHostId;
+            this.HostId = store.HostId;
         }
 
         /// <summary>
@@ -230,22 +229,6 @@ namespace HyperSlackers.MultiHost
             }
 
             base.Dispose(disposing);
-        }
-    }
-
-    /// <summary>
-    /// Exposes role related API for a multi-tenant <c>DbContext</c> having key and host key as <c>string</c> data types.
-    /// </summary>
-    public class RoleManagerMultiHostString : RoleManagerMultiHost<IdentityRoleMultiHostString, string, IdentityUserRoleMultiHostString>
-    {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="RoleManagerMultiHostString" /> class.
-        /// </summary>
-        /// <param name="store">The <c>RoleStore</c>.</param>
-        public RoleManagerMultiHostString(RoleStoreMultiHostString store)
-            : base(store)
-        {
-            Contract.Requires<ArgumentNullException>(store != null, "store");
         }
     }
 
