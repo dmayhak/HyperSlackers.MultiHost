@@ -588,7 +588,7 @@ namespace HyperSlackers.AspNet.Identity.EntityFramework
         /// <param name="hostId">The default host id.</param>
         /// <param name="systemHostId">The system host identifier.</param>
         public UserStoreMultiHostGuid(DbContext context, Guid systemHostId, Guid hostId)
-            : base(context, hostId, systemHostId)
+            : base(context, systemHostId, hostId)
         {
             Contract.Requires<ArgumentNullException>(context != null, "context");
             Contract.Requires<ArgumentNullException>(systemHostId != Guid.Empty, "systemHostId");
@@ -627,7 +627,7 @@ namespace HyperSlackers.AspNet.Identity.EntityFramework
         /// <param name="hostId">The default host id.</param>
         /// <param name="systemHostId">The system host identifier.</param>
         public UserStoreMultiHostInt(DbContext context, int systemHostId, int hostId)
-            : base(context, hostId, systemHostId)
+            : base(context, systemHostId, hostId)
         {
             Contract.Requires<ArgumentNullException>(context != null, "context");
             Contract.Requires<ArgumentException>(systemHostId > 0);
@@ -666,7 +666,7 @@ namespace HyperSlackers.AspNet.Identity.EntityFramework
         /// <param name="hostId">The default host id.</param>
         /// <param name="systemHostId">The system host identifier.</param>
         public UserStoreMultiHostLong(DbContext context, long systemHostId, long hostId)
-            : base(context, hostId, systemHostId)
+            : base(context, systemHostId, hostId)
         {
             Contract.Requires<ArgumentNullException>(context != null, "context");
             Contract.Requires<ArgumentException>(systemHostId > 0);

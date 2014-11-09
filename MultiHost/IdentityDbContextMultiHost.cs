@@ -60,8 +60,8 @@ namespace HyperSlackers.AspNet.Identity.EntityFramework
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityDbContextMultiHost{TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim}" /> class.
         /// </summary>
-        public IdentityDbContextMultiHost(TKey systemHostId, bool disableAuditing = false)
-            : this("DefaultConnection", systemHostId, disableAuditing)
+        public IdentityDbContextMultiHost(TKey systemHostId)
+            : this("DefaultConnection", systemHostId)
         {
         }
 
@@ -69,8 +69,8 @@ namespace HyperSlackers.AspNet.Identity.EntityFramework
         /// Initializes a new instance of the <see cref="IdentityDbContextMultiHost{TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim}" /> class.
         /// </summary>
         /// <param name="nameOrConnectionString">The name or connection string.</param>
-        public IdentityDbContextMultiHost(string nameOrConnectionString, TKey systemHostId, bool disableAuditing = false)
-            : base(nameOrConnectionString, disableAuditing)
+        public IdentityDbContextMultiHost(string nameOrConnectionString, TKey systemHostId)
+            : base(nameOrConnectionString)
         {
             Contract.Requires<ArgumentNullException>(!nameOrConnectionString.IsNullOrWhiteSpace(), "nameOrConnectionString");
 
@@ -211,8 +211,8 @@ namespace HyperSlackers.AspNet.Identity.EntityFramework
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityDbContextMultiHostGuid{TUser}"/> class.
         /// </summary>
-        public IdentityDbContextMultiHostGuid(Guid systemHostId, bool disableAuditing = false)
-            : this("DefaultConnection", systemHostId, disableAuditing)
+        public IdentityDbContextMultiHostGuid(Guid systemHostId)
+            : this("DefaultConnection", systemHostId)
         {
         }
 
@@ -220,8 +220,8 @@ namespace HyperSlackers.AspNet.Identity.EntityFramework
         /// Initializes a new instance of the <see cref="IdentityDbContextMultiHostGuid{TUser}"/> class.
         /// </summary>
         /// <param name="nameOrConnectionString">The name or connection string.</param>
-        public IdentityDbContextMultiHostGuid(string nameOrConnectionString, Guid systemHostId, bool disableAuditing = false)
-            : base(nameOrConnectionString, systemHostId, disableAuditing)
+        public IdentityDbContextMultiHostGuid(string nameOrConnectionString, Guid systemHostId)
+            : base(nameOrConnectionString, systemHostId)
         {
             Contract.Requires<ArgumentNullException>(!nameOrConnectionString.IsNullOrWhiteSpace(), "nameOrConnectionString");
         }
@@ -248,8 +248,8 @@ namespace HyperSlackers.AspNet.Identity.EntityFramework
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityDbContextMultiHostInt{TUser}"/> class.
         /// </summary>
-        public IdentityDbContextMultiHostInt(int systemHostId, bool disableAuditing = false)
-            : this("DefaultConnection", systemHostId, disableAuditing)
+        public IdentityDbContextMultiHostInt(int systemHostId)
+            : this("DefaultConnection", systemHostId)
         {
         }
 
@@ -257,8 +257,8 @@ namespace HyperSlackers.AspNet.Identity.EntityFramework
         /// Initializes a new instance of the <see cref="IdentityDbContextMultiHostInt{TUser}"/> class.
         /// </summary>
         /// <param name="nameOrConnectionString">The name or connection string.</param>
-        public IdentityDbContextMultiHostInt(string nameOrConnectionString, int systemHostId, bool disableAuditing = false)
-            : base(nameOrConnectionString, systemHostId, disableAuditing)
+        public IdentityDbContextMultiHostInt(string nameOrConnectionString, int systemHostId)
+            : base(nameOrConnectionString, systemHostId)
         {
             Contract.Requires<ArgumentNullException>(!nameOrConnectionString.IsNullOrWhiteSpace(), "nameOrConnectionString");
         }
@@ -285,8 +285,8 @@ namespace HyperSlackers.AspNet.Identity.EntityFramework
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityDbContexMultiHosttLong{TUser}"/> class.
         /// </summary>
-        public IdentityDbContextMultiHostLong(long systemHostId, bool disableAuditing = false)
-            : this("DefaultConnection", systemHostId, disableAuditing)
+        public IdentityDbContextMultiHostLong(long systemHostId)
+            : this("DefaultConnection", systemHostId)
         {
         }
 
@@ -294,8 +294,8 @@ namespace HyperSlackers.AspNet.Identity.EntityFramework
         /// Initializes a new instance of the <see cref="IdentityDbContexMultiHosttLong{TUser}"/> class.
         /// </summary>
         /// <param name="nameOrConnectionString">The name or connection string.</param>
-        public IdentityDbContextMultiHostLong(string nameOrConnectionString, long systemHostId, bool disableAuditing = false)
-            : base(nameOrConnectionString, systemHostId, disableAuditing)
+        public IdentityDbContextMultiHostLong(string nameOrConnectionString, long systemHostId)
+            : base(nameOrConnectionString, systemHostId)
         {
             Contract.Requires<ArgumentNullException>(!nameOrConnectionString.IsNullOrWhiteSpace(), "nameOrConnectionString");
         }

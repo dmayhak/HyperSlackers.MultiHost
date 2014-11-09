@@ -67,7 +67,7 @@ namespace HyperSlackers.AspNet.Identity.EntityFramework
 
             ThrowIfDisposed();
 
-            return await Context.Set<THost>().FindAsync(hostId);
+            return await Context.Set<THost>().FirstOrDefaultAsync(h => h.HostId.Equals(hostId));
         }
 
         public async Task<THost> FindByNameAsync(string hostName)

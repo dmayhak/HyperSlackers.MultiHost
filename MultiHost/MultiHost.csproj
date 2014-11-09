@@ -201,6 +201,7 @@
     <Compile Include="Attributes\ConvertNullToEmptyStringAttribute.cs" />
     <Compile Include="Entities\HostDomain.cs" />
     <Compile Include="Entities\Host.cs" />
+    <Compile Include="ExtensionMethods\HostManagerExtensions.cs" />
     <Compile Include="HostManager.cs" />
     <Compile Include="HostStore.cs" />
     <Compile Include="ExtensionMethods\RoleManagerExtensions.cs" />
