@@ -76,7 +76,7 @@ namespace HyperSlackers.AspNet.Identity.EntityFramework
 
             ThrowIfDisposed();
 
-			return this.Roles.Where(r => r.HostId.Equals(hostId) || (r.HostId.Equals(this.SystemHostId) || r.IsGlobal == true));
+			return this.Roles.Where(r => r.HostId.Equals(hostId) || r.IsGlobal == true);
 		}
 
 		/// <summary>

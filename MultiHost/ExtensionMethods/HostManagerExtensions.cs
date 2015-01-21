@@ -65,6 +65,13 @@ namespace HyperSlackers.AspNet.Identity.EntityFramework
             return AsyncHelper.RunSync(() => manager.FindByNameAsync(hostName));
         }
 
+        public static THost GetSystemHost<THost, TKey>(this HostManager<THost, TKey> manager)
+            where THost : IdentityHost<TKey>, new()
+            where TKey : IEquatable<TKey>
+        {
+            return AsyncHelper.RunSync(() => manager.GetSystemHostAsync());
+        }
+
         public static void AddDomain<THost, TKey>(this HostManager<THost, TKey> manager, THost host, string domainName)
             where THost : IdentityHost<TKey>, new()
             where TKey : IEquatable<TKey>

@@ -79,6 +79,13 @@ namespace HyperSlackers.AspNet.Identity.EntityFramework
             return await Context.Set<THost>().FirstOrDefaultAsync(h => h.Name.ToUpper() == hostName.ToUpper());
         }
 
+        public async Task<THost> GetSystemHostAsync()
+        {
+            ThrowIfDisposed();
+
+            return await Context.Set<THost>().FirstOrDefaultAsync(h => h.IsSystemHost);
+        }
+
         public IList<string> GetDomains(TKey hostId)
         {
             ThrowIfDisposed();

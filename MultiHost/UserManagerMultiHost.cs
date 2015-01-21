@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Data.Entity;
 using System.Security.Claims;
+using HyperSlackers.AspNet.Identity.EntityFramework.Entities;
 
 namespace HyperSlackers.AspNet.Identity.EntityFramework
 {
@@ -353,7 +354,7 @@ namespace HyperSlackers.AspNet.Identity.EntityFramework
         /// <param name="userName">Name of the user.</param>
         /// <param name="password">The password.</param>
         /// <returns></returns>
-        public async Task<TUser> FindAsync(TKey hostId, string userName, string password, bool includeSystemHost = false)
+        public async Task<TUser> FindAsync(TKey hostId, string userName, string password)
         {
             Contract.Requires<ArgumentNullException>(!hostId.Equals(default(TKey)), "hostId");
             Contract.Requires<ArgumentNullException>(!userName.IsNullOrWhiteSpace(), "userName");
@@ -366,7 +367,7 @@ namespace HyperSlackers.AspNet.Identity.EntityFramework
             return await Users
                 .Where(u => u.UserName == userName
                     && u.PasswordHash == hash
-                    && (u.HostId.Equals(hostId) || u.HostId.Equals(this.SystemHostId)))
+                    && (u.HostId.Equals(hostId) || u.IsGlobal == true))
                 .SingleOrDefaultAsync();
         }
 
