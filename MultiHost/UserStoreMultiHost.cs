@@ -1,9 +1,4 @@
-﻿// Copyright (C) 2014 Del Mayhak
-//
-// This software may be modified and distributed under the terms
-// of the MIT license.  See the LICENSE file for details.
-
-using Microsoft.AspNet.Identity.EntityFramework;
+﻿using Microsoft.AspNet.Identity.EntityFramework;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -366,7 +361,7 @@ namespace HyperSlackers.AspNet.Identity.EntityFramework
             ThrowIfDisposed();
 
             return await Users
-                .SingleOrDefaultAsync(u => u.Email == email 
+                .SingleOrDefaultAsync(u => u.Email == email
                     && (u.HostId.Equals(hostId) || u.IsGlobal));
         }
 
