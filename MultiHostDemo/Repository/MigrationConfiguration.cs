@@ -100,6 +100,14 @@ namespace MultiHostDemo.Repository
 
             context.SaveChanges();
 
+            // HACK: the below code should only run once...
+
+            host = context.Hosts.SingleOrDefault(h => h.HostId == hostId);
+            var hostManager = context.HostManager;
+            hostManager.AddDomain(host, "localhost"); // coming to site via localhost will cause host to be this one;
+                                                        // coming to site via 127.0.0.1 will cause host to be the system host
+                                                        // play with adding additional hosts and using the hosts file to test
+
             // add users to roles (if they are already in the role, the add will be ignored
             var userManager = context.UserManager;
             userManager.AddToRole(context.SystemHostId, suId, RoleType.Super.ToString()); // role granted at the system host
